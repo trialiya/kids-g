@@ -1,0 +1,48 @@
+/* Адаптация под телефон, планшет и компьютер */
+@media (max-width: 380px) {
+    h1 { font-size: 1.6rem; }
+    .spin .val, .colon { font-size: 2rem; }
+    .spin button { width: 48px; }
+  }
+@media (min-width: 820px) {
+    main { max-width: 960px; }
+    #menu .levels { grid-template-columns: 1fr 1fr; }
+    .game-body { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
+    svg.clock { max-width: 400px; }
+    .spin .val { font-size: 3rem; }
+    .spin button { width: 72px; }
+    #end { max-width: 560px; margin: 0 auto; }
+  }
+@media (max-height: 480px) and (orientation: landscape) {
+    h1, .sub { display: none; }
+    .game-body { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+    svg.clock { max-width: 240px; }
+    #game #levelTip { display: none; }
+  }
+@media (max-width: 819px) {
+    .timecard { padding: 2px 0; }
+    .timecard .big { font-size: 2.6rem; }
+    .timecard .words { font-size: .9rem; }
+    .choices.clock-grid { max-width: min(100%, 46vh); gap: 8px; }
+    .choices.clock-grid button { min-height: 0; padding: 3px; }
+    body.playing h1, body.playing .sub { display: none; }
+    body.playing main { padding-top: 8px; padding-bottom: 8px; }
+    body.playing #game { padding: 10px 12px; }
+    #game .top { margin-bottom: 6px; }
+    #game .top button { min-height: 36px; padding: 4px 10px; }
+    #game .progress { margin-bottom: 6px; height: 8px; }
+    #levelTip { font-size: .85rem; padding: 6px 10px; margin-bottom: 6px; line-height: 1.3; }
+    svg.clock { max-width: min(100%, 36vh); }
+    .legend { margin: 2px 0 4px; font-size: .85rem; }
+    .choices { gap: 8px; margin: 4px 0; }
+    .choices button { font-size: 1.35rem; padding: 8px 6px; min-height: 48px; border-width: 2px; }
+    .answer { margin: 2px 0; gap: 8px; }
+    .spin { gap: 2px; }
+    .spin button { width: 52px; min-height: 36px; padding: 2px 0; }
+    .spin .val, .colon { font-size: 1.8rem; }
+    .spin .lbl { display: none; }
+    .check, .next { min-height: 44px; padding: 8px 12px; margin-top: 6px; }
+    .feedback { margin-top: 8px; padding: 8px 10px; font-size: .92rem; }
+  }
+@media (max-width: 400px) { #game .top { gap: 4px; } #game .top button { padding-left: 8px; padding-right: 8px; } #game .top > span { font-size: .95rem; } }
+@media (max-width: 340px) { #game .top button { padding-left: 5px; padding-right: 5px; } #game .top > span { font-size: .85rem; } }
