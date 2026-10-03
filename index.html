@@ -4,6 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#fff8e7">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Который час?">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>Который час?</title>
 <style>
   :root {
@@ -115,12 +122,19 @@
     .check, .next { min-height: 44px; padding: 8px 12px; margin-top: 6px; }
     .feedback { margin-top: 8px; padding: 8px 10px; font-size: .92rem; }
   }
+  .fs { display: block; margin: 0 auto 12px; background: #fff; border: 2px solid var(--accent); padding: 8px 14px; font-size: .95rem; }
+  .top .fs { display: inline-block; margin: 0; padding: 4px 10px; min-height: 36px; background: #eee; border: 0; font-size: 1.1rem; }
+  .ios-hint { text-align: center; font-size: .85rem; color: var(--muted); margin: -4px 0 12px; }
+  body.playing #fsMenu, body.playing #iosHint, #end ~ #fsMenu { display: none; }
+  .top .fs.hidden { display: none !important; }
 </style>
 </head>
 <body>
 <main>
   <h1>🕒 Который час?</h1>
-  <p class="sub">Учимся определять время по стрелочным часам<span class="hint-kb"></span></p>
+  <p class="sub">Учимся определять время по стрелочным часам</p>
+  <button class="fs hidden" id="fsMenu">⛶ На весь экран</button>
+  <p class="ios-hint hidden" id="iosHint">На iPhone: «Поделиться» → «На экран Домой», и игра откроется на весь экран.</p>
 
   <!-- Выбор уровня -->
   <section id="menu" class="card">
@@ -139,6 +153,7 @@
       <button id="back">← Уровни</button>
       <span id="levelName"></span>
       <span id="score">⭐ 0</span>
+      <button class="fs hidden" id="fsGame" aria-label="На весь экран">⛶</button>
     </div>
     <div class="progress"><div id="bar"></div></div>
     <div id="levelTip" class="tip"></div>
@@ -215,6 +230,37 @@ const pad = n => String(n).padStart(2, "0");
 const ns = "http://www.w3.org/2000/svg";
 
 let mode = "choice", level, qIndex, score, current, guessH, guessM, answered, lastKey;
+
+/* ---------- полноэкранный режим ---------- */
+const fsRoot = document.documentElement;
+const isStandalone = matchMedia("(display-mode: fullscreen), (display-mode: standalone)").matches
+  || navigator.standalone === true;
+const canFs = !isStandalone && !!(fsRoot.requestFullscreen || fsRoot.webkitRequestFullscreen);
+const inFs = () => !!(document.fullscreenElement || document.webkitFullscreenElement);
+function toggleFs() {
+  try {
+    if (inFs()) (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+    else (fsRoot.requestFullscreen || fsRoot.webkitRequestFullscreen).call(fsRoot);
+  } catch (e) { /* браузер не разрешил */ }
+}
+function syncFs() {
+  const label = inFs() ? "✕ Выйти из полного экрана" : "⛶ На весь экран";
+  $("fsMenu").textContent = label;
+  $("fsGame").textContent = inFs() ? "✕" : "⛶";
+}
+if (canFs) {
+  $("fsMenu").classList.remove("hidden");
+  $("fsGame").classList.remove("hidden");
+  $("fsMenu").onclick = $("fsGame").onclick = toggleFs;
+  document.addEventListener("fullscreenchange", syncFs);
+  document.addEventListener("webkitfullscreenchange", syncFs);
+} else if (!isStandalone && /iPhone|iPad|iPod/.test(navigator.userAgent)) {
+  // На iPhone полноэкранного API нет — подсказываем установку на главный экран
+  $("iosHint").classList.remove("hidden");
+}
+if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+  navigator.serviceWorker.register("sw.js").catch(() => {});
+}
 
 /* ---------- меню ---------- */
 LEVELS.forEach(l => {
