@@ -103,6 +103,11 @@
 
   /* компактный экран игры на телефоне: часы и ответ влезают без прокрутки */
   @media (max-width: 819px) {
+    .timecard { padding: 2px 0; }
+    .timecard .big { font-size: 2.6rem; }
+    .timecard .words { font-size: .9rem; }
+    .choices.clock-grid { max-width: min(100%, 46vh); gap: 8px; }
+    .choices.clock-grid button { min-height: 0; padding: 3px; }
     body.playing h1, body.playing .sub { display: none; }
     body.playing main { padding-top: 8px; padding-bottom: 8px; }
     body.playing #game { padding: 10px 12px; }
@@ -136,6 +141,27 @@
   #levelTip #tipText { flex: 1; }
   .tipspeak { margin-left: 0; width: 40px; height: 40px; }
   .speak.on { background: var(--min); }
+  .langsw { display: flex; justify-content: center; margin: 2px 0 0; }
+  .langsw button { padding: 4px 12px; min-height: 32px; font-size: .85rem; background: #fff; border: 2px solid var(--accent); }
+  .langsw button:first-child { border-radius: 14px 0 0 14px; }
+  .langsw button:last-child { border-radius: 0 14px 14px 0; border-left-width: 0; }
+  .langsw button.active { background: var(--accent); }
+  body.playing .langsw { display: none; }
+  /* режимы */
+  .modes { display: flex; gap: 6px; margin-bottom: 8px; }
+  .modes button { flex: 1; padding: 8px 4px; font-size: .95rem; background: #eee; border: 2px solid transparent; }
+  .modes button.active { background: var(--accent); border-color: var(--ink); }
+  #game .top > *, #game .top button { white-space: nowrap; }
+  @media (max-width: 400px) { #game .top { gap: 4px; } #game .top button { padding-left: 8px; padding-right: 8px; } #game .top > span { font-size: .95rem; } }
+  @media (max-width: 340px) { #game .top button { padding-left: 5px; padding-right: 5px; } #game .top > span { font-size: .85rem; } }
+  .modedesc { margin: 0 0 12px; text-align: center; color: var(--muted); font-size: .9rem; line-height: 1.35; }
+  .timecard { text-align: center; padding: 8px 0 4px; }
+  .timecard .big { font-size: 4rem; font-weight: bold; line-height: 1.1; }
+  .timecard .words { color: var(--muted); font-size: 1.05rem; }
+  .timecard.cheer { animation: cheer .8s ease; }
+  .choices.clock-grid { max-width: min(100%, 460px); margin-left: auto; margin-right: auto; }
+  .choices.clock-grid button { padding: 6px; font-size: 1rem; aspect-ratio: 1; display: grid; place-items: center; }
+  .choices.clock-grid svg { width: 100%; height: 100%; display: block; }
   /* звуки и анимация */
   .confetti-layer { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 50; }
   .confetti-layer span { position: absolute; left: 50%; top: 38%; font-size: 1.7rem; line-height: 1; will-change: transform, opacity;
@@ -160,31 +186,40 @@
 </head>
 <body>
 <main>
-  <h1>🕒 Который час?</h1>
-  <p class="sub">Учимся определять время по стрелочным часам</p>
+  <div class="langsw" id="langSw" role="group" aria-label="Language">
+    <button data-l="ru">RU</button><button data-l="en">EN</button>
+  </div>
+  <h1 data-i="h1">🕒 Который час?</h1>
+  <p class="sub" data-i="sub">Учимся определять время по стрелочным часам</p>
   <button class="fs" id="sfxMenu"></button>
   <button class="fs hidden" id="fsMenu">⛶ На весь экран</button>
-  <p class="ios-hint hidden" id="iosHint">На iPhone: «Поделиться» → «На экран Домой», и игра откроется на весь экран.</p>
+  <p class="ios-hint hidden" id="iosHint" data-i="ios">На iPhone: «Поделиться» → «На экран Домой», и игра откроется на весь экран.</p>
 
   <!-- Выбор уровня -->
   <section id="menu" class="card">
-    <div class="tip">
+    <div class="tip" data-ih="howto">
       <b>Как читать часы:</b><br>
       <span style="color:var(--hour)"><b>Короткая красная</b></span> стрелка — часы.
       <span style="color:var(--min)"><b>Длинная синяя</b></span> стрелка — минуты.
       Одно большое деление (цифра) для длинной стрелки — это <b>5 минут</b>.
     </div>
+    <div class="modes" id="modes" role="tablist" aria-label="Режим игры" data-ia="modesAria">
+      <button data-k="learn" role="tab" data-i="mLearn">🎓 Обучение</button>
+      <button data-k="play" role="tab" data-i="mPlay">🏆 Игра</button>
+      <button data-k="clocks" role="tab" data-i="mClocks">🕒 Найди часы</button>
+    </div>
+    <p class="modedesc" id="modeDesc"></p>
     <div class="levels" id="levels"></div>
   </section>
 
   <!-- Игра -->
   <section id="game" class="card hidden">
     <div class="top">
-      <button id="back">← Уровни</button>
+      <button id="back" data-i="back">← Уровни</button>
       <span id="levelName"></span>
       <span id="score">⭐ 0</span>
       <button class="fs" id="sfxGame"></button>
-      <button class="fs hidden" id="fsGame" aria-label="На весь экран">⛶</button>
+      <button class="fs hidden" id="fsGame" aria-label="На весь экран" data-ia="fsAria">⛶</button>
     </div>
     <div class="progress"><div id="bar"></div></div>
     <div id="levelTip" class="tip">
@@ -193,32 +228,33 @@
     </div>
     <div class="game-body">
     <div class="col-clock">
-    <svg class="clock" id="clock" viewBox="0 0 200 200" role="img" aria-label="Часы"></svg>
+    <div class="timecard hidden" id="timeCard"><div class="big" id="timeBig"></div><div class="words" id="timeWords"></div></div>
+    <svg class="clock" id="clock" viewBox="0 0 200 200" role="img" aria-label="Часы" data-ia="clockAria"></svg>
     <div class="legend">
-      <span><i class="dot" style="background:var(--hour)"></i>часы</span>
-      <span><i class="dot" style="background:var(--min)"></i>минуты</span>
+      <span><i class="dot" style="background:var(--hour)"></i><span data-i="legH">часы</span></span>
+      <span><i class="dot" style="background:var(--min)"></i><span data-i="legM">минуты</span></span>
     </div>
     </div>
     <div class="col-ctrl">
     <div class="choices hidden" id="choices"></div>
     <div class="answer" id="answer">
       <div class="spin">
-        <button id="hUp" aria-label="часы больше">▲</button>
+        <button id="hUp" aria-label="часы больше" data-ia="hUp">▲</button>
         <div class="val" id="hVal">12</div>
-        <button id="hDn" aria-label="часы меньше">▼</button>
-        <div class="lbl">часы</div>
+        <button id="hDn" aria-label="часы меньше" data-ia="hDn">▼</button>
+        <div class="lbl" data-i="lblH">часы</div>
       </div>
       <div class="colon">:</div>
       <div class="spin" id="mSpin">
-        <button id="mUp" aria-label="минуты больше">▲</button>
+        <button id="mUp" aria-label="минуты больше" data-ia="mUp">▲</button>
         <div class="val" id="mVal">00</div>
-        <button id="mDn" aria-label="минуты меньше">▼</button>
-        <div class="lbl">минуты</div>
+        <button id="mDn" aria-label="минуты меньше" data-ia="mDn">▼</button>
+        <div class="lbl" data-i="lblM">минуты</div>
       </div>
     </div>
-    <button class="check" id="check">Проверить ✔</button>
+    <button class="check" id="check" data-i="check">Проверить ✔</button>
     <div id="feedback" class="feedback hidden" aria-live="polite"></div>
-    <button class="next hidden" id="next">Дальше →</button>
+    <button class="next hidden" id="next" data-i="next">Дальше →</button>
     </div>
     </div>
   </section>
@@ -229,8 +265,8 @@
     <div class="stars" id="endStars"></div>
     <p id="endText"></p>
     <div class="row">
-      <button id="again">Ещё раз</button>
-      <button id="toMenu" style="background:#eee">Уровни</button>
+      <button id="again" data-i="again">Ещё раз</button>
+      <button id="toMenu" style="background:#eee" data-i="toMenu">Уровни</button>
     </div>
   </section>
 </main>
@@ -242,28 +278,192 @@ const ROUNDS = 10;
 
 // step — шаг минут в ответе; mins — какие минуты может показывать часы
 const LEVELS = [
-  { id: 1, name: "Ровно час", desc: "Длинная стрелка смотрит на 12", step: 0,
-    minutes: [0], numbers: true,
-    tip: "Когда длинная стрелка показывает на <b>12</b> — на часах ровно столько часов, на сколько показывает короткая стрелка." },
-  { id: 2, name: "Половина", desc: "Ровно и половина часа", step: 30,
-    minutes: [0, 30], numbers: true,
-    tip: "Длинная стрелка на <b>12</b> — ровно. Длинная на <b>6</b> — <b>30 минут</b> (половина). Короткая стрелка при этом стоит <b>между</b> двумя цифрами." },
-  { id: 3, name: "Четверти", desc: "Ровно, 15, 30 и 45 минут", step: 15,
-    minutes: [0, 15, 30, 45], numbers: true,
-    tip: "Длинная на <b>3</b> — 15 минут, на <b>6</b> — 30, на <b>9</b> — 45. Короткая стрелка показывает час, который <b>уже прошёл</b> (ещё не дошла до следующей цифры)." },
-  { id: 4, name: "По пять минут", desc: "5, 10, 20, 25 … минут", step: 5,
-    minutes: [0,5,10,15,20,25,30,35,40,45,50,55], numbers: true,
-    tip: "Каждая цифра для длинной стрелки — это <b>5 минут</b>: 1 → 5, 2 → 10, 3 → 15, 4 → 20 … Считай пятёрками!" },
-  { id: 5, name: "Мастер", desc: "Любые минуты, без подсказок", step: 1,
-    minutes: null, numbers: false,
-    tip: "Сначала найди ближайшую цифру перед стрелкой и умножь на 5, потом добавь маленькие деления. Цифры минут на этих часах не подписаны!" },
+  { id: 1, step: 0,
+    minutes: [0], numbers: true },
+  { id: 2, step: 30,
+    minutes: [0, 30], numbers: true },
+  { id: 3, step: 15,
+    minutes: [0, 15, 30, 45], numbers: true },
+  { id: 4, step: 5,
+    minutes: [0,5,10,15,20,25,30,35,40,45,50,55], numbers: true },
+  { id: 5, step: 1,
+    minutes: null, numbers: false },
 ];
 
 const $ = id => document.getElementById(id);
 const pad = n => String(n).padStart(2, "0");
 const ns = "http://www.w3.org/2000/svg";
 
+
+/* ---------- языки (ru / en) ---------- */
+const enMin = n => n + (n === 1 ? " minute" : " minutes");
+const enPhrase = (h, m) => {
+  const nx = h % 12 + 1;
+  if (m === 0) return `${h} o’clock`;
+  if (m === 15) return `quarter past ${h}`;
+  if (m === 30) return `half past ${h}`;
+  if (m === 45) return `quarter to ${nx}`;
+  if (m < 30) return `${m % 5 === 0 ? m : enMin(m)} past ${h}`;
+  return `${(60 - m) % 5 === 0 ? 60 - m : enMin(60 - m)} to ${nx}`;
+};
+const ruHours = h => h === 1 ? "час" : (h >= 2 && h <= 4) ? "часа" : "часов";
+const ruMin = m => {
+  const t = m % 10, hh = m % 100;
+  if (hh >= 11 && hh <= 14) return "минут";
+  return t === 1 ? "минута" : (t >= 2 && t <= 4) ? "минуты" : "минут";
+};
+
+const I18N = {
+ru: {
+  title: "Который час?", h1: "🕒 Который час?", sub: "Учимся определять время по стрелочным часам",
+  ios: "На iPhone: «Поделиться» → «На экран Домой», и игра откроется на весь экран.",
+  howto: `<b>Как читать часы:</b><br>
+      <span style="color:var(--hour)"><b>Короткая красная</b></span> стрелка — часы.
+      <span style="color:var(--min)"><b>Длинная синяя</b></span> стрелка — минуты.
+      Одно большое деление (цифра) для длинной стрелки — это <b>5 минут</b>.`,
+  mLearn: "🎓 Обучение", mPlay: "🏆 Игра", mClocks: "🕒 Найди часы", modesAria: "Режим игры",
+  desc_learn: "Видишь все подсказки, можно пробовать снова, пока не найдёшь правильный ответ.",
+  desc_play: "Без подсказок и только одна попытка. Проверь, чему ты научился!",
+  desc_clocks: "Дано время — найди часы, на которых стрелки стоят правильно. Одна попытка.",
+  start: "▶ Начать", choose4: "🔘 Выбор из 4", typeIt: "⌨️ Ввод",
+  back: "← Уровни", lvShort: n => `Ур. ${n}`, legH: "часы", legM: "минуты", lblH: "часы", lblM: "минуты",
+  hUp: "часы больше", hDn: "часы меньше", mUp: "минуты больше", mDn: "минуты меньше", clockAria: "Часы",
+  check: "Проверить ✔", next: "Дальше →", result: "Результат 🏁", again: "Ещё раз", toMenu: "Уровни",
+  soundOn: "🔔 Звуки: вкл", soundOff: "🔕 Звуки: выкл", soundOffAria: "Выключить звуки", soundOnAria: "Включить звуки",
+  fsEnter: "⛶ На весь экран", fsExit: "✕ Выйти из полного экрана", fsAria: "На весь экран",
+  speakExpl: "Прочитать объяснение вслух", speakHint: "Прочитать подсказку вслух", speakTipLbl: "Послушать, как определять время",
+  speakTitle: "Прочитать вслух", speakTipTitle: "Послушать подсказку", stopRead: "Остановить чтение", readAloud: "Прочитать вслух",
+  speechLang: "ru-RU", speechTime: (h, mm) => mm === "00" ? h + " ровно" : h + " " + +mm, speechTimes: " умножить на ", speechArrow: " это ",
+  levels: [
+    { name: "Ровно час", desc: "Длинная стрелка смотрит на 12",
+      tip: "Когда длинная стрелка показывает на <b>12</b> — на часах ровно столько часов, на сколько показывает короткая стрелка." },
+    { name: "Половина", desc: "Ровно и половина часа",
+      tip: "Длинная стрелка на <b>12</b> — ровно. Длинная на <b>6</b> — <b>30 минут</b> (половина). Короткая стрелка при этом стоит <b>между</b> двумя цифрами." },
+    { name: "Четверти", desc: "Ровно, 15, 30 и 45 минут",
+      tip: "Длинная на <b>3</b> — 15 минут, на <b>6</b> — 30, на <b>9</b> — 45. Короткая стрелка показывает час, который <b>уже прошёл</b> (ещё не дошла до следующей цифры)." },
+    { name: "По пять минут", desc: "5, 10, 20, 25 … минут",
+      tip: "Каждая цифра для длинной стрелки — это <b>5 минут</b>: 1 → 5, 2 → 10, 3 → 15, 4 → 20 … Считай пятёрками!" },
+    { name: "Мастер", desc: "Любые минуты, без подсказок",
+      tip: "Сначала найди ближайшую цифру перед стрелкой и умножь на 5, потом добавь маленькие деления. Цифры минут на этих часах не подписаны!" },
+  ],
+  hoursWord: ruHours, minWord: ruMin,
+  timeText: (h, m) => m === 0 ? `${h} ${ruHours(h)} ровно (${h}:00)` : `${h} ${ruHours(h)} ${m} ${ruMin(m)} (${h}:${pad(m)})`,
+  timeWords: (h, m) => m === 0 ? `${h} ${ruHours(h)} ровно` : `${h} ${ruHours(h)} ${m} ${ruMin(m)}`,
+  optAria: (i, h, m) => `Вариант ${i}: ${I18N.ru.timeText(h, m)}`, clockOptAria: i => `Часы, вариант ${i}`,
+  // как найти время
+  ecZero1: () => `Длинная <b>синяя</b> стрелка смотрит на <b>12</b> — значит минут нет, время ровное.`,
+  ecZero2: h => `Короткая <b>красная</b> стрелка показывает на <b>${h}</b> — значит ${h} ${ruHours(h)}.`,
+  ecExact: (near, m) => `Длинная <b>синяя</b> стрелка смотрит на цифру <b>${near}</b>. Каждая цифра — это 5 минут: ${near} × 5 = <b>${m}</b> ${ruMin(m)}.`,
+  ecPartial: (near, rest, m) => `Длинная <b>синяя</b> стрелка прошла цифру <b>${near === 0 ? 12 : near}</b> (это ${near * 5} ${ruMin(near * 5)}) и ещё ${rest} ${ruMin(rest)}-делени${rest === 1 ? "е" : "я"} — всего <b>${m}</b> ${ruMin(m)}.`,
+  ecEarly: (h, nx) => `Короткая <b>красная</b> стрелка уже прошла цифру <b>${h}</b>, но до <b>${nx}</b> ещё не дошла. Берём цифру, которую она <b>прошла</b>: ${h} ${ruHours(h)}.`,
+  ecHalf: (h, nx) => `Короткая <b>красная</b> стрелка стоит ровно посередине между <b>${h}</b> и <b>${nx}</b>. Берём меньшую цифру, которую она прошла: ${h} ${ruHours(h)}.`,
+  ecLate: (h, nx) => `Короткая <b>красная</b> стрелка почти дошла до <b>${nx}</b>, но ещё не дошла. Значит, час всё ещё <b>${h}</b>. (Близко к ${nx} — потому что скоро наступит следующий час.)`,
+  // разбор ошибок (ввод / выбор)
+  emSwap: () => `😕 Похоже, ты перепутал(а) стрелки. <b>Короткая</b> красная — это часы, а <b>длинная</b> синяя — минуты.`,
+  emHourLate: (gh, h) => `😕 <b>Часы:</b> ты назвал(а) ${gh}, но красная стрелка ещё <b>не дошла</b> до ${gh}. Минут уже больше половины, поэтому она стоит близко к ${gh}, но час ещё ${h}. Правило: смотри цифру, которую короткая стрелка <b>уже прошла</b>.`,
+  emHourEarly: (gh, h, nx) => `😕 <b>Часы:</b> ты назвал(а) ${gh}, но красная стрелка уже <b>прошла</b> цифру ${h} и идёт к ${nx}. Час — это цифра, которую она прошла, то есть ${h}.`,
+  emHourZero: (h, gh) => `😕 <b>Часы:</b> когда длинная стрелка на 12, короткая точно показывает на нужный час. Она показывает на <b>${h}</b>, а не на ${gh}.`,
+  emHourGen: (h, gh) => `😕 <b>Часы:</b> короткая красная стрелка находится у цифры <b>${h}</b>, а ты выбрал(а) ${gh}. Проверь, что смотришь на <b>короткую</b> стрелку.`,
+  emMinNum: (a, m) => `😕 <b>Минуты:</b> ты прочитал(а) цифру на часах (${a}) как минуты. Но каждая цифра — это <b>5 минут</b>! ${a} × 5 = <b>${m}</b>.`,
+  emMinOne: (x, m, gm) => `😕 <b>Минуты:</b> ты ошибся(лась) на одну цифру. Длинная стрелка смотрит на <b>${x}</b>, значит ${x} × 5 = <b>${m}</b> ${ruMin(m)}, а не ${gm}.`,
+  emMinOpp: (m, gm) => `😕 <b>Минуты:</b> ты посмотрел(а) на противоположную сторону циферблата. Длинная стрелка показывает ${m} ${ruMin(m)}, а не ${gm}. Начинай считать от <b>12</b> по часовой стрелке.`,
+  emMinClose: d => `😕 <b>Минуты:</b> почти! Ты ошибся(лась) на ${d}. Найди ближайшую цифру перед стрелкой, умножь на 5, потом посчитай маленькие деления.`,
+  emMinGen: (m, gm) => `😕 <b>Минуты:</b> длинная стрелка показывает <b>${m}</b> ${ruMin(m)}, а не ${gm}. Помни: цифра × 5 = минуты.`,
+  // разбор ошибок («Найди часы»)
+  ecmSwap: () => `😕 На выбранных часах стрелки перепутаны: короткая красная показывает минуты, а длинная синяя — часы.`,
+  ecmHour: (gh, h) => `😕 <b>Часы:</b> на выбранных часах короткая красная стрелка у цифры <b>${gh}</b>, а нужно <b>${h}</b>. Короткая стрелка показывает час, который она <b>уже прошла</b>.`,
+  ecmWantExact: (x, m) => `на цифру <b>${x}</b> (${x} × 5 = ${m})`,
+  ecmWantAfter: x => `чуть дальше цифры <b>${x}</b>`,
+  ecmMin: (gm, m, want) => `😕 <b>Минуты:</b> на выбранных часах длинная синяя стрелка показывает ${gm} ${ruMin(gm)}, а нужно ${m}. Она должна смотреть ${want}.`,
+  // обратная связь
+  fbOk: "🎉 Правильно!", fbOkHint: "👍 Верно, с подсказкой!", why: "Почему так?", fbBad: "Не совсем 🙂", fbRetry: "Не совсем 🙂 Попробуй ещё!",
+  hintLabel: "💡 Подсказка", hintNote: "Правильный вариант подсвечен.",
+  fbAnswered: (a, right) => `Ты ответил(а): <b>${a}</b>. Правильно: <b>${right}</b>.`,
+  fbHowRight: "Как правильно:",
+  fbClockLine: (right, picked) => `Нужно найти часы, которые показывают <b>${right}</b>. Ты выбрал(а) часы с временем <b>${picked}</b>.`,
+  fbHowFind: "Как найти нужные часы:",
+  // итог
+  endGreat: "Отлично! 🏆", endGood: "Хорошо! 👍", endMore: "Давай потренируемся ещё 💪",
+  endScore: (sc, n) => `Верно: ${sc} из ${n}.`, endNext: name => ` Попробуй следующий уровень: «${name}»!`, endRetry: " Прочитай подсказку и попробуй ещё раз.",
+},
+en: {
+  title: "What time is it?", h1: "🕒 What time is it?", sub: "Learn to tell the time on an analog clock",
+  ios: "On iPhone: tap “Share” → “Add to Home Screen” to play full screen.",
+  howto: `<b>How to read the clock:</b><br>
+      The <span style="color:var(--hour)"><b>short red</b></span> hand shows hours.
+      The <span style="color:var(--min)"><b>long blue</b></span> hand shows minutes.
+      One big mark (number) for the long hand is <b>5 minutes</b>.`,
+  mLearn: "🎓 Learn", mPlay: "🏆 Play", mClocks: "🕒 Find the clock", modesAria: "Game mode",
+  desc_learn: "You get all the hints and can try again until you find the right answer.",
+  desc_play: "No hints and only one try. Show what you’ve learned!",
+  desc_clocks: "You get a time — find the clock whose hands show it. One try.",
+  start: "▶ Start", choose4: "🔘 Choose from 4", typeIt: "⌨️ Type it",
+  back: "← Levels", lvShort: n => `Lv ${n}`, legH: "hours", legM: "minutes", lblH: "hours", lblM: "minutes",
+  hUp: "more hours", hDn: "fewer hours", mUp: "more minutes", mDn: "fewer minutes", clockAria: "Clock",
+  check: "Check ✔", next: "Next →", result: "Results 🏁", again: "Play again", toMenu: "Levels",
+  soundOn: "🔔 Sound: on", soundOff: "🔕 Sound: off", soundOffAria: "Turn sound off", soundOnAria: "Turn sound on",
+  fsEnter: "⛶ Full screen", fsExit: "✕ Exit full screen", fsAria: "Full screen",
+  speakExpl: "Read the explanation aloud", speakHint: "Read the hint aloud", speakTipLbl: "Listen to how to read the time",
+  speakTitle: "Read aloud", speakTipTitle: "Listen to the tip", stopRead: "Stop reading", readAloud: "Read aloud",
+  speechLang: "en-US", speechTime: (h, mm) => mm === "00" ? h + " o’clock" : h + " " + mm, speechTimes: " times ", speechArrow: " is ",
+  levels: [
+    { name: "On the hour", desc: "The long hand points to 12",
+      tip: "When the long hand points to <b>12</b>, the time is exactly the hour the short hand points to." },
+    { name: "Half past", desc: "On the hour and half past",
+      tip: "Long hand on <b>12</b> — exactly. Long hand on <b>6</b> — <b>30 minutes</b> (half past). The short hand then stands <b>between</b> two numbers." },
+    { name: "Quarters", desc: "On the hour, 15, 30 and 45 minutes",
+      tip: "Long hand on <b>3</b> — 15 minutes, on <b>6</b> — 30, on <b>9</b> — 45. The short hand shows the hour it has <b>already passed</b> (it hasn’t reached the next number yet)." },
+    { name: "Every five minutes", desc: "5, 10, 20, 25 … minutes",
+      tip: "Each number for the long hand is <b>5 minutes</b>: 1 → 5, 2 → 10, 3 → 15, 4 → 20 … Count by fives!" },
+    { name: "Master", desc: "Any minute, no hints",
+      tip: "First find the nearest number before the hand and multiply by 5, then add the small marks. The minute numbers are not shown on this clock!" },
+  ],
+  hoursWord: h => h === 1 ? "hour" : "hours", minWord: m => m === 1 ? "minute" : "minutes",
+  timeText: (h, m) => `${enPhrase(h, m)} (${h}:${pad(m)})`,
+  timeWords: (h, m) => enPhrase(h, m),
+  optAria: (i, h, m) => `Option ${i}: ${enPhrase(h, m)}`, clockOptAria: i => `Clock, option ${i}`,
+  ecZero1: () => `The long <b>blue</b> hand points to <b>12</b> — so there are no extra minutes, it’s exactly on the hour.`,
+  ecZero2: h => `The short <b>red</b> hand points to <b>${h}</b> — so it’s ${h} o’clock.`,
+  ecExact: (near, m) => `The long <b>blue</b> hand points to the number <b>${near}</b>. Each number is 5 minutes: ${near} × 5 = <b>${m}</b> minutes.`,
+  ecPartial: (near, rest, m) => `The long <b>blue</b> hand has passed the number <b>${near === 0 ? 12 : near}</b> (that’s ${near * 5} minutes) and ${rest} more small mark${rest === 1 ? "" : "s"} — <b>${m}</b> minutes in total.`,
+  ecEarly: (h, nx) => `The short <b>red</b> hand has already passed <b>${h}</b> but hasn’t reached <b>${nx}</b> yet. Take the number it has <b>passed</b>: the hour is ${h}.`,
+  ecHalf: (h, nx) => `The short <b>red</b> hand is exactly halfway between <b>${h}</b> and <b>${nx}</b>. Take the smaller number it has passed: the hour is ${h}.`,
+  ecLate: (h, nx) => `The short <b>red</b> hand is almost at <b>${nx}</b> but hasn’t reached it. So the hour is still <b>${h}</b>. (It’s close to ${nx} because the next hour is coming soon.)`,
+  emSwap: () => `😕 It looks like you mixed up the hands. The <b>short</b> red hand shows hours and the <b>long</b> blue hand shows minutes.`,
+  emHourLate: (gh, h) => `😕 <b>Hours:</b> you said ${gh}, but the red hand hasn’t reached ${gh} yet. More than half an hour has passed, so it stands close to ${gh}, but the hour is still ${h}. Rule: look at the number the short hand has <b>already passed</b>.`,
+  emHourEarly: (gh, h, nx) => `😕 <b>Hours:</b> you said ${gh}, but the red hand has already <b>passed</b> ${h} and is heading to ${nx}. The hour is the number it has passed — ${h}.`,
+  emHourZero: (h, gh) => `😕 <b>Hours:</b> when the long hand is on 12, the short hand points exactly at the hour. It points to <b>${h}</b>, not ${gh}.`,
+  emHourGen: (h, gh) => `😕 <b>Hours:</b> the short red hand is at <b>${h}</b>, but you chose ${gh}. Make sure you’re looking at the <b>short</b> hand.`,
+  emMinNum: (a, m) => `😕 <b>Minutes:</b> you read the number on the clock (${a}) as minutes. But each number is <b>5 minutes</b>! ${a} × 5 = <b>${m}</b>.`,
+  emMinOne: (x, m, gm) => `😕 <b>Minutes:</b> you’re off by one number. The long hand points to <b>${x}</b>, so ${x} × 5 = <b>${m}</b> minutes, not ${gm}.`,
+  emMinOpp: (m, gm) => `😕 <b>Minutes:</b> you looked at the opposite side of the dial. The long hand shows ${m} minutes, not ${gm}. Start counting from <b>12</b>, clockwise.`,
+  emMinClose: d => `😕 <b>Minutes:</b> almost! You’re off by ${d}. Find the nearest number before the hand, multiply by 5, then count the small marks.`,
+  emMinGen: (m, gm) => `😕 <b>Minutes:</b> the long hand shows <b>${m}</b> minutes, not ${gm}. Remember: number × 5 = minutes.`,
+  ecmSwap: () => `😕 The hands on the clock you picked are swapped: the short red hand shows minutes and the long blue hand shows hours.`,
+  ecmHour: (gh, h) => `😕 <b>Hours:</b> on the clock you picked the short red hand is at <b>${gh}</b>, but it should be at <b>${h}</b>. The short hand shows the hour it has <b>already passed</b>.`,
+  ecmWantExact: (x, m) => `at the number <b>${x}</b> (${x} × 5 = ${m})`,
+  ecmWantAfter: x => `a little past the number <b>${x}</b>`,
+  ecmMin: (gm, m, want) => `😕 <b>Minutes:</b> on the clock you picked the long blue hand shows ${gm} minutes, but you need ${m}. It should point ${want}.`,
+  fbOk: "🎉 Correct!", fbOkHint: "👍 Correct, with a hint!", why: "Why?", fbBad: "Not quite 🙂", fbRetry: "Not quite 🙂 Try again!",
+  hintLabel: "💡 Hint", hintNote: "The correct option is highlighted.",
+  fbAnswered: (a, right) => `You answered: <b>${a}</b>. Correct: <b>${right}</b>.`,
+  fbHowRight: "How to get it right:",
+  fbClockLine: (right, picked) => `You need the clock that shows <b>${right}</b>. You picked a clock showing <b>${picked}</b>.`,
+  fbHowFind: "How to find the right clock:",
+  endGreat: "Excellent! 🏆", endGood: "Good job! 👍", endMore: "Let’s practice some more 💪",
+  endScore: (sc, n) => `Correct: ${sc} of ${n}.`, endNext: name => ` Try the next level: “${name}”!`, endRetry: " Read the tip and try again.",
+},
+};
+let lang = "ru";
+try {
+  const sv = localStorage.getItem("lang");
+  lang = sv === "ru" || sv === "en" ? sv : ((navigator.language || "ru").toLowerCase().startsWith("ru") ? "ru" : "en");
+} catch (e) {}
+const t = (k, ...a) => { const v = I18N[lang][k]; return typeof v === "function" ? v(...a) : v; };
+const lv = l => I18N[lang].levels[l.id - 1];
+
 let attempts = 0, revealed = false;
+let kind = "learn", answerType = "choice", training = true;
 let mode = "choice", level, qIndex, score, current, guessH, guessM, answered, lastKey;
 
 /* ---------- звуки и анимация ---------- */
@@ -318,15 +518,14 @@ function confetti(count) {
 function retrigger(el, cls) { el.classList.remove(cls); void el.getBoundingClientRect(); el.classList.add(cls); }
 function celebrate(big) {
   sfx.ok();
-  retrigger($("clock"), "cheer");
+  retrigger(mode === "clocks" ? $("timeCard") : $("clock"), "cheer");
   if (big) { retrigger($("score"), "pop"); confetti(22); } else confetti(8);
   if (navigator.vibrate) try { navigator.vibrate(big ? [30, 40, 30] : 20); } catch (e) {}
 }
 function syncSound() {
-  const t = soundOn ? "🔔" : "🔕";
-  $("sfxGame").textContent = t;
-  $("sfxMenu").textContent = soundOn ? "🔔 Звуки: вкл" : "🔕 Звуки: выкл";
-  $("sfxGame").setAttribute("aria-label", soundOn ? "Выключить звуки" : "Включить звуки");
+  $("sfxGame").textContent = soundOn ? "🔔" : "🔕";
+  $("sfxMenu").textContent = t(soundOn ? "soundOn" : "soundOff");
+  $("sfxGame").setAttribute("aria-label", t(soundOn ? "soundOffAria" : "soundOnAria"));
 }
 function toggleSound() {
   soundOn = !soundOn;
@@ -350,7 +549,7 @@ function toggleFs() {
   } catch (e) { /* браузер не разрешил */ }
 }
 function syncFs() {
-  const label = inFs() ? "✕ Выйти из полного экрана" : "⛶ На весь экран";
+  const label = t(inFs() ? "fsExit" : "fsEnter");
   $("fsMenu").textContent = label;
   $("fsGame").textContent = inFs() ? "✕" : "⛶";
 }
@@ -369,17 +568,50 @@ if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
 }
 
 /* ---------- меню ---------- */
-LEVELS.forEach(l => {
-  const b = document.createElement("div");
-  b.className = "level-row";
-  b.innerHTML = `<span class="n">${l.id}</span><span class="t">${l.name}<small>${l.desc}</small></span>
-    <button class="mode" data-m="choice">🔘 Выбор из 4</button>
-    <button class="mode" data-m="input">⌨️ Ввод</button>`;
-  b.querySelectorAll(".mode").forEach(btn => btn.onclick = () => start(l, btn.dataset.m));
-  $("levels").appendChild(b);
+const KINDS = { learn: { icon: "🎓" }, play: { icon: "🏆" }, clocks: { icon: "🕒" } };
+try { const k = localStorage.getItem("kind"); if (KINDS[k]) kind = k; } catch (e) {}
+
+function renderLevels() {
+  document.querySelectorAll("#modes button").forEach(b => b.classList.toggle("active", b.dataset.k === kind));
+  $("modeDesc").textContent = t("desc_" + kind);
+  $("levels").innerHTML = "";
+  LEVELS.forEach(l => {
+    const b = document.createElement("div");
+    b.className = "level-row";
+    const buttons = kind === "play"
+      ? `<button class="mode" data-t="choice">${t("choose4")}</button><button class="mode" data-t="input">${t("typeIt")}</button>`
+      : `<button class="mode" data-t="choice">${t("start")}</button>`;
+    b.innerHTML = `<span class="n">${l.id}</span><span class="t">${lv(l).name}<small>${lv(l).desc}</small></span>${buttons}`;
+    b.querySelectorAll(".mode").forEach(btn => btn.onclick = () => start(l, kind, btn.dataset.t));
+    $("levels").appendChild(b);
+  });
+}
+document.querySelectorAll("#modes button").forEach(b => b.onclick = () => {
+  kind = b.dataset.k;
+  try { localStorage.setItem("kind", kind); } catch (e) {}
+  renderLevels();
 });
+
+/* ---------- применение языка ---------- */
+function applyLang() {
+  document.documentElement.lang = lang;
+  document.title = t("title");
+  document.querySelectorAll("[data-i]").forEach(n => n.textContent = t(n.dataset.i));
+  document.querySelectorAll("[data-ih]").forEach(n => n.innerHTML = t(n.dataset.ih));
+  document.querySelectorAll("[data-ia]").forEach(n => n.setAttribute("aria-label", t(n.dataset.ia)));
+  document.querySelectorAll("#langSw button").forEach(b => b.classList.toggle("active", b.dataset.l === lang));
+  const st = $("speakTip");
+  st.dataset.label = t("speakTipLbl"); st.setAttribute("aria-label", t("speakTipLbl")); st.title = t("speakTipTitle");
+  syncSound(); syncFs(); renderLevels();
+}
+document.querySelectorAll("#langSw button").forEach(b => b.onclick = () => {
+  lang = b.dataset.l;
+  try { localStorage.setItem("lang", lang); } catch (e) {}
+  applyLang();
+});
+
 $("back").onclick = $("toMenu").onclick = showMenu;
-$("again").onclick = () => start(level, mode);
+$("again").onclick = () => start(level, kind, answerType);
 
 function show(id) {
   document.body.classList.toggle("playing", id === "game");
@@ -388,10 +620,19 @@ function show(id) {
 function showMenu() { stopSpeak(); show("menu"); }
 
 /* ---------- игра ---------- */
-function start(l, m) {
-  level = l; mode = m || mode; qIndex = 0; score = 0; lastKey = null;
-  $("levelName").textContent = `Уровень ${l.id}`;
-  $("tipText").innerHTML = "💡 " + l.tip;
+function start(l, k, type) {
+  level = l; kind = k; answerType = type || "choice";
+  training = kind === "learn";
+  mode = kind === "clocks" ? "clocks" : answerType;
+  qIndex = 0; score = 0; lastKey = null;
+  $("levelName").textContent = `${KINDS[kind].icon} ${t("lvShort", l.id)}`;
+  $("tipText").innerHTML = "💡 " + lv(l).tip;
+  $("levelTip").classList.toggle("hidden", !training);
+  const clocks = mode === "clocks";
+  $("clock").classList.toggle("hidden", clocks);
+  document.querySelector(".legend").classList.toggle("hidden", clocks);
+  $("timeCard").classList.toggle("hidden", !clocks);
+  $("choices").classList.toggle("clock-grid", clocks);
   const inp = mode === "input";
   $("answer").classList.toggle("hidden", !inp);
   $("check").classList.toggle("hidden", !inp);
@@ -419,7 +660,10 @@ function nextQuestion() {
   if (qIndex >= ROUNDS) return finish();
   current = randomTime();
   guessH = 12; guessM = 0; answered = false; attempts = 0; revealed = false;
-  drawClock(current.h, current.m);
+  if (mode === "clocks") {
+    $("timeBig").textContent = level.step === 0 ? current.h + ":00" : fmt(current.h, current.m);
+    $("timeWords").textContent = timeWords(current.h, current.m);
+  } else drawClock(current.h, current.m);
   updateAnswer();
   $("feedback").classList.add("hidden");
   $("next").classList.add("hidden");
@@ -448,11 +692,12 @@ $("mDn").onclick = () => { guessM = (guessM - stepM() + 60) % 60; updateAnswer()
 $("check").onclick = () => submit(guessH, level.step === 0 ? 0 : guessM);
 
 function fmt(h, m) { return h + ":" + pad(m); }
+const timeWords = (h, m) => t("timeWords", h, m);
 
 function makeChoices() {
   const box = $("choices");
   box.innerHTML = "";
-  if (mode !== "choice") return;
+  if (mode === "input") return;
   const { h, m } = current, key = (a, b) => a + ":" + b;
   const grid = level.minutes || null;
   const okM = x => (x + 60) % 60;
@@ -470,21 +715,31 @@ function makeChoices() {
     cand.push([nextHour(h), snap(m + st)], [prevHour(h), snap(m - st)]);
   }
   const seen = new Set([key(h, m)]), opts = [{ h, m }];
+  // на картинке часы с разницей в минуту не отличить — для режима «Найди часы» нужна заметная разница
+  const close = (ch, cm) => mode === "clocks" && opts.some(o => o.h === ch && Math.min(Math.abs(o.m - cm), 60 - Math.abs(o.m - cm)) < 5);
   shuffle(cand).forEach(([ch, cm]) => {
     const k = key(ch, cm);
-    if (opts.length < 4 && !seen.has(k)) { seen.add(k); opts.push({ h: ch, m: cm }); }
+    if (opts.length < 4 && !seen.has(k) && !close(ch, cm)) { seen.add(k); opts.push({ h: ch, m: cm }); }
   });
   while (opts.length < 4) { // добор случайными, если подсказок не хватило
     const ch = 1 + Math.floor(Math.random() * 12);
     const cm = level.step === 0 ? 0 : (grid ? grid[Math.floor(Math.random() * grid.length)] : Math.floor(Math.random() * 60));
     const k = key(ch, cm);
-    if (!seen.has(k)) { seen.add(k); opts.push({ h: ch, m: cm }); }
+    if (!seen.has(k) && !close(ch, cm)) { seen.add(k); opts.push({ h: ch, m: cm }); }
   }
   shuffle(opts).forEach((o, i) => {
     const b = document.createElement("button");
-    b.textContent = level.step === 0 ? o.h + ":00" : fmt(o.h, o.m);
     b.dataset.h = o.h; b.dataset.m = o.m;
-    b.setAttribute("aria-label", `Вариант ${i + 1}: ${timeText(o.h, o.m)}`);
+    if (mode === "clocks") {
+      const svg = document.createElementNS(ns, "svg");
+      svg.setAttribute("viewBox", "0 0 200 200");
+      drawClockInto(svg, o.h, o.m, false);
+      b.appendChild(svg);
+      b.setAttribute("aria-label", t("clockOptAria", i + 1));
+    } else {
+      b.textContent = level.step === 0 ? o.h + ":00" : fmt(o.h, o.m);
+      b.setAttribute("aria-label", t("optAria", i + 1, o.h, o.m));
+    }
     b.onclick = () => choose(o, b);
     box.appendChild(b);
   });
@@ -500,6 +755,7 @@ function shuffle(a) {
    Правильный вариант подсвечивается только после просмотра подсказки или её прослушивания. */
 function choose(o, btn) {
   if (answered) return;
+  if (!training) { submit(o.h, o.m, false); return; } // основной режим: одна попытка
   if (o.h === current.h && o.m === current.m) {
     stopSpeak();
     submit(o.h, o.m, attempts > 0 || revealed);
@@ -513,7 +769,7 @@ function choose(o, btn) {
 }
 
 function revealAnswer() {
-  if (revealed || mode !== "choice") return;
+  if (revealed || !training) return;
   revealed = true;
   document.querySelectorAll("#choices button").forEach(b => {
     if (+b.dataset.h === current.h && +b.dataset.m === current.m) b.classList.add("right");
@@ -525,14 +781,16 @@ function showRetryFeedback(gh, gm) {
   const f = $("feedback");
   f.className = "feedback bad";
   const speakBtn = canSpeak
-    ? `<button class="speak" id="speak" type="button" aria-label="Прочитать подсказку вслух" title="Прочитать вслух">🔊</button>` : "";
+    ? `<button class="speak" id="speak" type="button" aria-label="${t("speakHint")}" title="${t("speakTitle")}">🔊</button>` : "";
   const bullets = explainMistake(current.h, current.m, gh, gm).map(s => `<li>${s}</li>`).join("");
-  f.innerHTML = `<h3>Не совсем 🙂 Попробуй ещё!${speakBtn}</h3>
-    <details id="hint"><summary>💡 Подсказка</summary><ul>${bullets}</ul>
-    <div class="hintnote">Правильный вариант подсвечен.</div></details>`;
+  f.innerHTML = `<h3>${t("fbRetry")}${speakBtn}</h3>
+    <details id="hint"><summary>${t("hintLabel")}</summary><ul>${bullets}</ul>
+    <div class="hintnote">${t("hintNote")}</div></details>`;
   f.classList.remove("hidden");
-  $("hint").addEventListener("toggle", () => { if ($("hint").open) revealAnswer(); });
+  const hintEl = $("hint");
+  hintEl.addEventListener("toggle", () => { if (hintEl.open) revealAnswer(); }); // элемент может исчезнуть до события
   const sp = $("speak");
+  if (sp) sp.dataset.label = t("speakHint");
   if (sp) sp.onclick = () => {
     if (speaking && activeSpeak === sp) return stopSpeak();
     revealAnswer();
@@ -558,7 +816,7 @@ function submit(guessH, gm, assisted) {
   $("check").classList.add("hidden");
   $("next").classList.remove("hidden");
   $("next").scrollIntoView({ block: "nearest", behavior: "smooth" });
-  $("next").textContent = qIndex === ROUNDS - 1 ? "Результат 🏁" : "Дальше →";
+  $("next").textContent = t(qIndex === ROUNDS - 1 ? "result" : "next");
   qIndex++;
   $("bar").style.width = (qIndex / ROUNDS * 100) + "%";
 }
@@ -567,7 +825,7 @@ $("next").onclick = nextQuestion;
 /* ---------- клавиатура (компьютер) ---------- */
 document.addEventListener("keydown", e => {
   if ($("game").classList.contains("hidden")) return;
-  if (mode === "choice" && !answered && /^[1-4]$/.test(e.key)) {
+  if (mode !== "input" && !answered && /^[1-4]$/.test(e.key)) {
     const b = $("choices").children[+e.key - 1]; if (b) b.click(); return;
   }
   if (e.key === "Enter" && (mode === "input" || answered)) {
@@ -581,39 +839,21 @@ document.addEventListener("keydown", e => {
 });
 
 /* ---------- слова ---------- */
-function hoursWord(h) { return h === 1 ? "час" : (h >= 2 && h <= 4) ? "часа" : "часов"; }
-function minWord(m) {
-  const t = m % 10, hh = m % 100;
-  if (hh >= 11 && hh <= 14) return "минут";
-  return t === 1 ? "минута" : (t >= 2 && t <= 4) ? "минуты" : "минут";
-}
-function timeText(h, m) {
-  return m === 0 ? `${h} ${hoursWord(h)} ровно (${h}:00)`
-                 : `${h} ${hoursWord(h)} ${m} ${minWord(m)} (${h}:${pad(m)})`;
-}
+const hoursWord = h => t("hoursWord", h);
+const minWord = m => t("minWord", m);
+const timeText = (h, m) => t("timeText", h, m);
 const nextHour = h => h % 12 + 1;
 const prevHour = h => (h + 10) % 12 + 1;
 
 /* ---------- объяснения ---------- */
 function explainCorrect(h, m) {
-  const parts = [];
+  const parts = [], nx = nextHour(h);
   if (m === 0) {
-    parts.push(`Длинная <b>синяя</b> стрелка смотрит на <b>12</b> — значит минут нет, время ровное.`);
-    parts.push(`Короткая <b>красная</b> стрелка показывает на <b>${h}</b> — значит ${h} ${hoursWord(h)}.`);
+    parts.push(t("ecZero1"), t("ecZero2", h));
   } else {
     const near = Math.floor(m / 5), rest = m % 5;
-    if (rest === 0) {
-      parts.push(`Длинная <b>синяя</b> стрелка смотрит на цифру <b>${near}</b>. Каждая цифра — это 5 минут: ${near} × 5 = <b>${m}</b> ${minWord(m)}.`);
-    } else {
-      parts.push(`Длинная <b>синяя</b> стрелка прошла цифру <b>${near === 0 ? 12 : near}</b> (это ${near * 5} ${minWord(near * 5)}) и ещё ${rest} ${minWord(rest)}-делени${rest === 1 ? "е" : "я"} — всего <b>${m}</b> ${minWord(m)}.`);
-    }
-    if (m < 30) {
-      parts.push(`Короткая <b>красная</b> стрелка уже прошла цифру <b>${h}</b>, но до <b>${nextHour(h)}</b> ещё не дошла. Берём цифру, которую она <b>прошла</b>: ${h} ${hoursWord(h)}.`);
-    } else if (m === 30) {
-      parts.push(`Короткая <b>красная</b> стрелка стоит ровно посередине между <b>${h}</b> и <b>${nextHour(h)}</b>. Берём меньшую цифру, которую она прошла: ${h} ${hoursWord(h)}.`);
-    } else {
-      parts.push(`Короткая <b>красная</b> стрелка почти дошла до <b>${nextHour(h)}</b>, но ещё не дошла. Значит, час всё ещё <b>${h}</b>. (Близко к ${nextHour(h)} — потому что скоро наступит следующий час.)`);
-    }
+    parts.push(rest === 0 ? t("ecExact", near, m) : t("ecPartial", near, rest, m));
+    parts.push(m < 30 ? t("ecEarly", h, nx) : m === 30 ? t("ecHalf", h, nx) : t("ecLate", h, nx));
   }
   return parts;
 }
@@ -624,33 +864,36 @@ function explainMistake(h, m, gh, gm) {
 
   // стрелки перепутаны
   if (!hourOk && !minOk && level.step !== 0 && gh === (m / 5 | 0 || 12) && gm === (h % 12) * 5) {
-    out.push(`😕 Похоже, ты перепутал(а) стрелки. <b>Короткая</b> красная — это часы, а <b>длинная</b> синяя — минуты.`);
+    out.push(t("emSwap"));
   } else {
     if (!hourOk) {
-      if (m >= 30 && gh === nextHour(h)) {
-        out.push(`😕 <b>Часы:</b> ты назвал(а) ${gh}, но красная стрелка ещё <b>не дошла</b> до ${gh}. Минут уже больше половины, поэтому она стоит близко к ${gh}, но час ещё ${h}. Правило: смотри цифру, которую короткая стрелка <b>уже прошла</b>.`);
-      } else if (m < 30 && m !== 0 && gh === prevHour(h)) {
-        out.push(`😕 <b>Часы:</b> ты назвал(а) ${gh}, но красная стрелка уже <b>прошла</b> цифру ${h} и идёт к ${nextHour(h)}. Час — это цифра, которую она прошла, то есть ${h}.`);
-      } else if (m === 0 && gh !== h) {
-        out.push(`😕 <b>Часы:</b> когда длинная стрелка на 12, короткая точно показывает на нужный час. Она показывает на <b>${h}</b>, а не на ${gh}.`);
-      } else {
-        out.push(`😕 <b>Часы:</b> короткая красная стрелка находится у цифры <b>${h}</b>, а ты выбрал(а) ${gh}. Проверь, что смотришь на <b>короткую</b> стрелку.`);
-      }
+      if (m >= 30 && gh === nextHour(h)) out.push(t("emHourLate", gh, h));
+      else if (m < 30 && m !== 0 && gh === prevHour(h)) out.push(t("emHourEarly", gh, h, nextHour(h)));
+      else if (m === 0 && gh !== h) out.push(t("emHourZero", h, gh));
+      else out.push(t("emHourGen", h, gh));
     }
     if (!minOk && level.step !== 0) {
       const asNumber = Math.floor(m / 5);
-      if (m % 5 === 0 && gm === asNumber) {
-        out.push(`😕 <b>Минуты:</b> ты прочитал(а) цифру на часах (${asNumber}) как минуты. Но каждая цифра — это <b>5 минут</b>! ${asNumber} × 5 = <b>${m}</b>.`);
-      } else if (gm % 5 === 0 && m % 5 === 0 && Math.abs(gm - m) === 5) {
-        out.push(`😕 <b>Минуты:</b> ты ошибся(лась) на одну цифру. Длинная стрелка смотрит на <b>${m / 5 || 12}</b>, значит ${m / 5 || 12} × 5 = <b>${m}</b> ${minWord(m)}, а не ${gm}.`);
-      } else if (gm === (m + 30) % 60) {
-        out.push(`😕 <b>Минуты:</b> ты посмотрел(а) на противоположную сторону циферблата. Длинная стрелка показывает ${m} ${minWord(m)}, а не ${gm}. Начинай считать от <b>12</b> по часовой стрелке.`);
-      } else if (level.step === 1 && Math.abs(gm - m) <= 3) {
-        out.push(`😕 <b>Минуты:</b> почти! Ты ошибся(лась) на ${Math.abs(gm - m)}. Найди ближайшую цифру перед стрелкой, умножь на 5, потом посчитай маленькие деления.`);
-      } else {
-        out.push(`😕 <b>Минуты:</b> длинная стрелка показывает <b>${m}</b> ${minWord(m)}, а не ${gm}. Помни: цифра × 5 = минуты.`);
-      }
+      if (m % 5 === 0 && gm === asNumber) out.push(t("emMinNum", asNumber, m));
+      else if (gm % 5 === 0 && m % 5 === 0 && Math.abs(gm - m) === 5) out.push(t("emMinOne", m / 5 || 12, m, gm));
+      else if (gm === (m + 30) % 60) out.push(t("emMinOpp", m, gm));
+      else if (level.step === 1 && Math.abs(gm - m) <= 3) out.push(t("emMinClose", Math.abs(gm - m)));
+      else out.push(t("emMinGen", m, gm));
     }
+  }
+  return out;
+}
+
+function explainClockMistake(h, m, gh, gm) {
+  const out = [];
+  if (gh === ((m / 5 | 0) || 12) && gm === (h % 12) * 5 && m % 5 === 0 && (gh !== h || gm !== m)) {
+    out.push(t("ecmSwap"));
+    return out;
+  }
+  if (gh !== h) out.push(t("ecmHour", gh, h));
+  if (gm !== m) {
+    const want = m % 5 === 0 ? t("ecmWantExact", m / 5 || 12, m) : t("ecmWantAfter", Math.floor(m / 5) || 12);
+    out.push(t("ecmMin", gm, m, want));
   }
   return out;
 }
@@ -659,23 +902,27 @@ function showFeedback(ok, gh, gm, assisted) {
   const f = $("feedback");
   f.className = "feedback " + (ok ? "ok" : "bad");
   const speakBtn = canSpeak
-    ? `<button class="speak" id="speak" type="button" aria-label="Прочитать объяснение вслух" title="Прочитать вслух">🔊</button>` : "";
+    ? `<button class="speak" id="speak" type="button" aria-label="${t("speakExpl")}" title="${t("speakTitle")}">🔊</button>` : "";
+  const li = arr => arr.map(x => `<li>${x}</li>`).join("");
+  const shown = level.step === 0 ? gh + ":00" : fmt(gh, gm);
   let html;
   if (ok) {
-    html = `<h3>${assisted ? "👍 Верно, с подсказкой!" : "🎉 Правильно!"}${speakBtn}</h3><div>${timeText(current.h, current.m)}</div>`;
-    html += `<details style="margin-top:6px"><summary>Почему так?</summary><ul>` +
-      explainCorrect(current.h, current.m).map(s => `<li>${s}</li>`).join("") + `</ul></details>`;
+    html = `<h3>${t(assisted ? "fbOkHint" : "fbOk")}${speakBtn}</h3><div>${timeText(current.h, current.m)}</div>`;
+    html += `<details style="margin-top:6px"><summary>${t("why")}</summary><ul>${li(explainCorrect(current.h, current.m))}</ul></details>`;
+  } else if (mode === "clocks") {
+    html = `<h3>${t("fbBad")}${speakBtn}</h3>`;
+    html += `<div>${t("fbClockLine", timeText(current.h, current.m), shown)}</div>`;
+    html += `<ul>${li(explainClockMistake(current.h, current.m, gh, gm))}</ul>`;
+    html += `<div style="margin-top:8px"><b>${t("fbHowFind")}</b></div><ul>${li(explainCorrect(current.h, current.m))}</ul>`;
   } else {
-    html = `<h3>Не совсем 🙂${speakBtn}</h3>`;
-    html += `<div>Ты ответил(а): <b>${level.step === 0 ? gh + ":00" : gh + ":" + pad(gm)}</b>.
-             Правильно: <b>${timeText(current.h, current.m)}</b>.</div>`;
-    html += `<ul>` + explainMistake(current.h, current.m, gh, gm).map(s => `<li>${s}</li>`).join("") + `</ul>`;
-    html += `<div style="margin-top:8px"><b>Как правильно:</b></div><ul>` +
-      explainCorrect(current.h, current.m).map(s => `<li>${s}</li>`).join("") + `</ul>`;
+    html = `<h3>${t("fbBad")}${speakBtn}</h3>`;
+    html += `<div>${t("fbAnswered", shown, timeText(current.h, current.m))}</div>`;
+    html += `<ul>${li(explainMistake(current.h, current.m, gh, gm))}</ul>`;
+    html += `<div style="margin-top:8px"><b>${t("fbHowRight")}</b></div><ul>${li(explainCorrect(current.h, current.m))}</ul>`;
   }
   f.innerHTML = html;
   const sp = $("speak");
-  if (sp) { sp.dataset.label = "Прочитать объяснение вслух"; sp.onclick = () => toggleSpeak(f, sp); }
+  if (sp) { sp.dataset.label = t("speakExpl"); sp.onclick = () => toggleSpeak(f, sp); }
 }
 
 /* ---------- чтение вслух ---------- */
@@ -686,14 +933,14 @@ function speechText(box) {
   const c = box.cloneNode(true);
   c.querySelectorAll(".speak").forEach(n => n.remove());
   c.querySelectorAll("details").forEach(d => d.open = true);
+  c.querySelectorAll("summary").forEach(n => { if (n.id !== "hintSummary" && n.closest("details").id !== "hint") n.remove(); });
   c.querySelectorAll("h3, div, li").forEach(n => n.append(" . ")); // паузы между фразами
   // убираем эмодзи и «служебные» подписи, чтобы голос их не зачитывал
   return c.textContent
     .replace(/[\u{1F300}-\u{1FAFF}\u2600-\u27BF]/gu, "")
-    .replace(/Почему так\?/g, "")
     .replace(/\(\d+:\d\d\)/g, "") // «(7:40)» дублирует слова
-    .replace(/(\d+):(\d\d)/g, (m, h, mm) => mm === "00" ? h + " ровно" : h + " " + +mm)
-    .replace(/×/g, " умножить на ").replace(/→/g, " это ")
+    .replace(/(\d+):(\d\d)/g, (m, h, mm) => t("speechTime", h, mm))
+    .replace(/×/g, t("speechTimes")).replace(/→/g, t("speechArrow"))
     .replace(/\(а\)|\(ась\)/g, "")
     .replace(/\s+/g, " ").trim();
 }
@@ -706,7 +953,7 @@ function setSpeakUi(on, btn) {
   if (activeSpeak) {
     activeSpeak.textContent = on ? "⏹" : "🔊";
     activeSpeak.classList.toggle("on", on);
-    activeSpeak.setAttribute("aria-label", on ? "Остановить чтение" : activeSpeak.dataset.label || "Прочитать вслух");
+    activeSpeak.setAttribute("aria-label", on ? t("stopRead") : activeSpeak.dataset.label || t("readAloud"));
   }
   if (!on) activeSpeak = null;
 }
@@ -722,8 +969,8 @@ function speak(box, btn) {
   speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(speechText(box));
   currentU = u;
-  u.lang = "ru-RU";
-  const v = speechSynthesis.getVoices().find(x => x.lang && x.lang.toLowerCase().startsWith("ru"));
+  u.lang = t("speechLang");
+  const v = speechSynthesis.getVoices().find(x => x.lang && x.lang.toLowerCase().startsWith(lang));
   if (v) u.voice = v;
   u.rate = 0.9;
   u.onend = u.onerror = () => { if (currentU === u) setSpeakUi(false); }; // cancel() старой реплики не сбрасывает новую
@@ -746,11 +993,11 @@ if (canSpeak) {
 /* ---------- итог ---------- */
 function finish() {
   const stars = score >= 9 ? 3 : score >= 7 ? 2 : score >= 4 ? 1 : 0;
-  $("endTitle").textContent = stars === 3 ? "Отлично! 🏆" : stars >= 1 ? "Хорошо! 👍" : "Давай потренируемся ещё 💪";
+  $("endTitle").textContent = t(stars === 3 ? "endGreat" : stars >= 1 ? "endGood" : "endMore");
   $("endStars").textContent = "★".repeat(stars) + "☆".repeat(3 - stars);
   const next = LEVELS[level.id] ;
-  $("endText").textContent = `Верно: ${score} из ${ROUNDS}.` +
-    (stars >= 2 && next ? ` Попробуй следующий уровень: «${next.name}»!` : stars < 2 ? " Прочитай подсказку и попробуй ещё раз." : "");
+  $("endText").textContent = t("endScore", score, ROUNDS) +
+    (stars >= 2 && next ? t("endNext", lv(next).name) : stars < 2 ? t("endRetry") : "");
   show("end");
   if (stars >= 2) { sfx.win(); confetti(stars === 3 ? 40 : 24); }
 }
@@ -764,7 +1011,10 @@ function el(name, attrs, parent) {
 }
 
 function drawClock(h, m) {
-  const svg = $("clock");
+  drawClockInto($("clock"), h, m, level.numbers && training); // в основном режиме цифры минут — это подсказка, их нет
+}
+
+function drawClockInto(svg, h, m, minuteNumbers) {
   svg.innerHTML = "";
   el("circle", { cx: 100, cy: 100, r: 96, fill: "#fffdf5", stroke: "#2b2d42", "stroke-width": 5 }, svg);
   for (let i = 0; i < 60; i++) {
@@ -780,7 +1030,7 @@ function drawClock(h, m) {
                            "text-anchor": "middle", "font-size": 20, "font-weight": "bold",
                            fill: "#2b2d42" }, svg);
     t.textContent = n;
-    if (level.numbers) { // подпись минут снаружи не помещается — рисуем мелко внутри кольца
+    if (minuteNumbers) { // подпись минут снаружи не помещается — рисуем мелко внутри кольца
       const tm = el("text", { x: 100 + 52 * Math.sin(a), y: 100 - 52 * Math.cos(a) + 3.5,
                               "text-anchor": "middle", "font-size": 9, fill: "#1d6fd1" }, svg);
       tm.textContent = n * 5;
@@ -799,6 +1049,7 @@ function hand(svg, deg, len, width, color) {
                x2: 100 + len * Math.sin(a), y2: 100 - len * Math.cos(a),
                stroke: color, "stroke-width": width, "stroke-linecap": "round" }, svg);
 }
+applyLang();
 </script>
 </body>
 </html>
