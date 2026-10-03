@@ -129,6 +129,9 @@
   .top .fs.hidden { display: none !important; }
   .feedback h3 { display: flex; align-items: center; gap: 8px; }
   .speak { margin-left: auto; width: 44px; height: 44px; padding: 0; border-radius: 50%; background: #fff; border: 2px solid var(--min); font-size: 1.3rem; line-height: 1; flex: none; }
+  .hintnote { margin-top: 6px; color: var(--muted); font-size: .9rem; }
+  .choices button.right:not(:disabled), .choices button.right { animation: pulse 1s ease 2; }
+  @keyframes pulse { 50% { transform: scale(1.05); } }
   .speak.on { background: var(--min); }
 </style>
 </head>
@@ -232,6 +235,7 @@ const $ = id => document.getElementById(id);
 const pad = n => String(n).padStart(2, "0");
 const ns = "http://www.w3.org/2000/svg";
 
+let attempts = 0, revealed = false;
 let mode = "choice", level, qIndex, score, current, guessH, guessM, answered, lastKey;
 
 /* ---------- полноэкранный режим ---------- */
@@ -315,7 +319,7 @@ function nextQuestion() {
   stopSpeak();
   if (qIndex >= ROUNDS) return finish();
   current = randomTime();
-  guessH = 12; guessM = 0; answered = false;
+  guessH = 12; guessM = 0; answered = false; attempts = 0; revealed = false;
   drawClock(current.h, current.m);
   updateAnswer();
   $("feedback").classList.add("hidden");
@@ -382,7 +386,7 @@ function makeChoices() {
     b.textContent = level.step === 0 ? o.h + ":00" : fmt(o.h, o.m);
     b.dataset.h = o.h; b.dataset.m = o.m;
     b.setAttribute("aria-label", `Вариант ${i + 1}: ${timeText(o.h, o.m)}`);
-    b.onclick = () => submit(o.h, o.m);
+    b.onclick = () => choose(o, b);
     box.appendChild(b);
   });
 }
@@ -393,7 +397,51 @@ function shuffle(a) {
   return a;
 }
 
-function submit(guessH, gm) {
+/* Режим «выбор из 4»: можно пробовать несколько раз.
+   Правильный вариант подсвечивается только после просмотра подсказки или её прослушивания. */
+function choose(o, btn) {
+  if (answered) return;
+  if (o.h === current.h && o.m === current.m) {
+    stopSpeak();
+    submit(o.h, o.m, attempts > 0 || revealed);
+    return;
+  }
+  attempts++;
+  btn.disabled = true;
+  btn.classList.add("wrong");
+  showRetryFeedback(o.h, o.m);
+}
+
+function revealAnswer() {
+  if (revealed || mode !== "choice") return;
+  revealed = true;
+  document.querySelectorAll("#choices button").forEach(b => {
+    if (+b.dataset.h === current.h && +b.dataset.m === current.m) b.classList.add("right");
+  });
+}
+
+function showRetryFeedback(gh, gm) {
+  stopSpeak();
+  const f = $("feedback");
+  f.className = "feedback bad";
+  const speakBtn = canSpeak
+    ? `<button class="speak" id="speak" type="button" aria-label="Прочитать подсказку вслух" title="Прочитать вслух">🔊</button>` : "";
+  const bullets = explainMistake(current.h, current.m, gh, gm).map(s => `<li>${s}</li>`).join("");
+  f.innerHTML = `<h3>Не совсем 🙂 Попробуй ещё!${speakBtn}</h3>
+    <details id="hint"><summary>💡 Подсказка</summary><ul>${bullets}</ul>
+    <div class="hintnote">Правильный вариант подсвечен.</div></details>`;
+  f.classList.remove("hidden");
+  $("hint").addEventListener("toggle", () => { if ($("hint").open) revealAnswer(); });
+  const sp = $("speak");
+  if (sp) sp.onclick = () => {
+    if (speaking) return stopSpeak();
+    revealAnswer();
+    $("hint").open = true;
+    speak(f);
+  };
+}
+
+function submit(guessH, gm, assisted) {
   if (answered) return;
   answered = true;
   const ok = guessH === current.h && gm === current.m;
@@ -402,9 +450,9 @@ function submit(guessH, gm) {
     if (+b.dataset.h === current.h && +b.dataset.m === current.m) b.classList.add("right");
     else if (+b.dataset.h === guessH && +b.dataset.m === gm) b.classList.add("wrong");
   });
-  if (ok) score++;
+  if (ok && !assisted) score++;
   $("score").textContent = "⭐ " + score;
-  showFeedback(ok, guessH, gm);
+  showFeedback(ok, guessH, gm, assisted);
   setSpinEnabled(false);
   $("check").classList.add("hidden");
   $("next").classList.remove("hidden");
@@ -506,14 +554,14 @@ function explainMistake(h, m, gh, gm) {
   return out;
 }
 
-function showFeedback(ok, gh, gm) {
+function showFeedback(ok, gh, gm, assisted) {
   const f = $("feedback");
   f.className = "feedback " + (ok ? "ok" : "bad");
   const speakBtn = canSpeak
     ? `<button class="speak" id="speak" type="button" aria-label="Прочитать объяснение вслух" title="Прочитать вслух">🔊</button>` : "";
   let html;
   if (ok) {
-    html = `<h3>🎉 Правильно!${speakBtn}</h3><div>${timeText(current.h, current.m)}</div>`;
+    html = `<h3>${assisted ? "👍 Верно, с подсказкой!" : "🎉 Правильно!"}${speakBtn}</h3><div>${timeText(current.h, current.m)}</div>`;
     html += `<details style="margin-top:6px"><summary>Почему так?</summary><ul>` +
       explainCorrect(current.h, current.m).map(s => `<li>${s}</li>`).join("") + `</ul></details>`;
   } else {
