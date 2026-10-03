@@ -127,6 +127,9 @@
   .ios-hint { text-align: center; font-size: .85rem; color: var(--muted); margin: -4px 0 12px; }
   body.playing #fsMenu, body.playing #iosHint, #end ~ #fsMenu { display: none; }
   .top .fs.hidden { display: none !important; }
+  .feedback h3 { display: flex; align-items: center; gap: 8px; }
+  .speak { margin-left: auto; width: 44px; height: 44px; padding: 0; border-radius: 50%; background: #fff; border: 2px solid var(--min); font-size: 1.3rem; line-height: 1; flex: none; }
+  .speak.on { background: var(--min); }
 </style>
 </head>
 <body>
@@ -279,7 +282,7 @@ function show(id) {
   document.body.classList.toggle("playing", id === "game");
   ["menu", "game", "end"].forEach(s => $(s).classList.toggle("hidden", s !== id));
 }
-function showMenu() { show("menu"); }
+function showMenu() { stopSpeak(); show("menu"); }
 
 /* ---------- игра ---------- */
 function start(l, m) {
@@ -309,6 +312,7 @@ function randomTime() {
 }
 
 function nextQuestion() {
+  stopSpeak();
   if (qIndex >= ROUNDS) return finish();
   current = randomTime();
   guessH = 12; guessM = 0; answered = false;
@@ -505,13 +509,15 @@ function explainMistake(h, m, gh, gm) {
 function showFeedback(ok, gh, gm) {
   const f = $("feedback");
   f.className = "feedback " + (ok ? "ok" : "bad");
+  const speakBtn = canSpeak
+    ? `<button class="speak" id="speak" type="button" aria-label="Прочитать объяснение вслух" title="Прочитать вслух">🔊</button>` : "";
   let html;
   if (ok) {
-    html = `<h3>🎉 Правильно!</h3><div>${timeText(current.h, current.m)}</div>`;
+    html = `<h3>🎉 Правильно!${speakBtn}</h3><div>${timeText(current.h, current.m)}</div>`;
     html += `<details style="margin-top:6px"><summary>Почему так?</summary><ul>` +
       explainCorrect(current.h, current.m).map(s => `<li>${s}</li>`).join("") + `</ul></details>`;
   } else {
-    html = `<h3>Не совсем 🙂</h3>`;
+    html = `<h3>Не совсем 🙂${speakBtn}</h3>`;
     html += `<div>Ты ответил(а): <b>${level.step === 0 ? gh + ":00" : gh + ":" + pad(gm)}</b>.
              Правильно: <b>${timeText(current.h, current.m)}</b>.</div>`;
     html += `<ul>` + explainMistake(current.h, current.m, gh, gm).map(s => `<li>${s}</li>`).join("") + `</ul>`;
@@ -519,6 +525,51 @@ function showFeedback(ok, gh, gm) {
       explainCorrect(current.h, current.m).map(s => `<li>${s}</li>`).join("") + `</ul>`;
   }
   f.innerHTML = html;
+  const sp = $("speak");
+  if (sp) sp.onclick = () => speaking ? stopSpeak() : speak(f);
+}
+
+/* ---------- чтение вслух ---------- */
+const canSpeak = "speechSynthesis" in window && "SpeechSynthesisUtterance" in window;
+let speaking = false;
+
+function speechText(box) {
+  const c = box.cloneNode(true);
+  c.querySelectorAll(".speak").forEach(n => n.remove());
+  c.querySelectorAll("details").forEach(d => d.open = true);
+  c.querySelectorAll("h3, div, li").forEach(n => n.append(" . ")); // паузы между фразами
+  // убираем эмодзи и «служебные» подписи, чтобы голос их не зачитывал
+  return c.textContent
+    .replace(/[\u{1F300}-\u{1FAFF}\u2600-\u27BF]/gu, "")
+    .replace(/Почему так\?/g, "")
+    .replace(/\(\d+:\d\d\)/g, "") // «(7:40)» дублирует слова
+    .replace(/(\d+):(\d\d)/g, (m, h, mm) => mm === "00" ? h + " ровно" : h + " " + +mm)
+    .replace(/×/g, " умножить на ").replace(/→/g, " ")
+    .replace(/\(а\)|\(ась\)/g, "")
+    .replace(/\s+/g, " ").trim();
+}
+
+function setSpeakUi(on) {
+  speaking = on;
+  const b = $("speak");
+  if (b) { b.textContent = on ? "⏹" : "🔊"; b.classList.toggle("on", on); b.setAttribute("aria-label", on ? "Остановить чтение" : "Прочитать объяснение вслух"); }
+}
+
+function speak(box) {
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(speechText(box));
+  u.lang = "ru-RU";
+  const v = speechSynthesis.getVoices().find(x => x.lang && x.lang.toLowerCase().startsWith("ru"));
+  if (v) u.voice = v;
+  u.rate = 0.9;
+  u.onend = u.onerror = () => setSpeakUi(false);
+  setSpeakUi(true);
+  speechSynthesis.speak(u);
+}
+
+function stopSpeak() {
+  if (canSpeak) speechSynthesis.cancel();
+  setSpeakUi(false);
 }
 
 /* ---------- итог ---------- */
