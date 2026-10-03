@@ -103,6 +103,11 @@
 
   /* компактный экран игры на телефоне: часы и ответ влезают без прокрутки */
   @media (max-width: 819px) {
+    .timecard { padding: 2px 0; }
+    .timecard .big { font-size: 2.6rem; }
+    .timecard .words { font-size: .9rem; }
+    .choices.clock-grid { max-width: min(100%, 46vh); gap: 8px; }
+    .choices.clock-grid button { min-height: 0; padding: 3px; }
     body.playing h1, body.playing .sub { display: none; }
     body.playing main { padding-top: 8px; padding-bottom: 8px; }
     body.playing #game { padding: 10px 12px; }
@@ -136,6 +141,21 @@
   #levelTip #tipText { flex: 1; }
   .tipspeak { margin-left: 0; width: 40px; height: 40px; }
   .speak.on { background: var(--min); }
+  /* режимы */
+  .modes { display: flex; gap: 6px; margin-bottom: 8px; }
+  .modes button { flex: 1; padding: 8px 4px; font-size: .95rem; background: #eee; border: 2px solid transparent; }
+  .modes button.active { background: var(--accent); border-color: var(--ink); }
+  #game .top > *, #game .top button { white-space: nowrap; }
+  @media (max-width: 400px) { #game .top { gap: 4px; } #game .top button { padding-left: 8px; padding-right: 8px; } #game .top > span { font-size: .95rem; } }
+  @media (max-width: 340px) { #game .top button { padding-left: 5px; padding-right: 5px; } #game .top > span { font-size: .85rem; } }
+  .modedesc { margin: 0 0 12px; text-align: center; color: var(--muted); font-size: .9rem; line-height: 1.35; }
+  .timecard { text-align: center; padding: 8px 0 4px; }
+  .timecard .big { font-size: 4rem; font-weight: bold; line-height: 1.1; }
+  .timecard .words { color: var(--muted); font-size: 1.05rem; }
+  .timecard.cheer { animation: cheer .8s ease; }
+  .choices.clock-grid { max-width: min(100%, 460px); margin-left: auto; margin-right: auto; }
+  .choices.clock-grid button { padding: 6px; font-size: 1rem; aspect-ratio: 1; display: grid; place-items: center; }
+  .choices.clock-grid svg { width: 100%; height: 100%; display: block; }
   /* звуки и анимация */
   .confetti-layer { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 50; }
   .confetti-layer span { position: absolute; left: 50%; top: 38%; font-size: 1.7rem; line-height: 1; will-change: transform, opacity;
@@ -174,6 +194,12 @@
       <span style="color:var(--min)"><b>Длинная синяя</b></span> стрелка — минуты.
       Одно большое деление (цифра) для длинной стрелки — это <b>5 минут</b>.
     </div>
+    <div class="modes" id="modes" role="tablist" aria-label="Режим игры">
+      <button data-k="learn" role="tab">🎓 Обучение</button>
+      <button data-k="play" role="tab">🏆 Игра</button>
+      <button data-k="clocks" role="tab">🕒 Найди часы</button>
+    </div>
+    <p class="modedesc" id="modeDesc"></p>
     <div class="levels" id="levels"></div>
   </section>
 
@@ -193,6 +219,7 @@
     </div>
     <div class="game-body">
     <div class="col-clock">
+    <div class="timecard hidden" id="timeCard"><div class="big" id="timeBig"></div><div class="words" id="timeWords"></div></div>
     <svg class="clock" id="clock" viewBox="0 0 200 200" role="img" aria-label="Часы"></svg>
     <div class="legend">
       <span><i class="dot" style="background:var(--hour)"></i>часы</span>
@@ -264,6 +291,7 @@ const pad = n => String(n).padStart(2, "0");
 const ns = "http://www.w3.org/2000/svg";
 
 let attempts = 0, revealed = false;
+let kind = "learn", answerType = "choice", training = true;
 let mode = "choice", level, qIndex, score, current, guessH, guessM, answered, lastKey;
 
 /* ---------- звуки и анимация ---------- */
@@ -318,7 +346,7 @@ function confetti(count) {
 function retrigger(el, cls) { el.classList.remove(cls); void el.getBoundingClientRect(); el.classList.add(cls); }
 function celebrate(big) {
   sfx.ok();
-  retrigger($("clock"), "cheer");
+  retrigger(mode === "clocks" ? $("timeCard") : $("clock"), "cheer");
   if (big) { retrigger($("score"), "pop"); confetti(22); } else confetti(8);
   if (navigator.vibrate) try { navigator.vibrate(big ? [30, 40, 30] : 20); } catch (e) {}
 }
@@ -369,17 +397,36 @@ if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
 }
 
 /* ---------- меню ---------- */
-LEVELS.forEach(l => {
-  const b = document.createElement("div");
-  b.className = "level-row";
-  b.innerHTML = `<span class="n">${l.id}</span><span class="t">${l.name}<small>${l.desc}</small></span>
-    <button class="mode" data-m="choice">🔘 Выбор из 4</button>
-    <button class="mode" data-m="input">⌨️ Ввод</button>`;
-  b.querySelectorAll(".mode").forEach(btn => btn.onclick = () => start(l, btn.dataset.m));
-  $("levels").appendChild(b);
+const KINDS = {
+  learn:  { icon: "🎓", desc: "Видишь все подсказки, можно пробовать снова, пока не найдёшь правильный ответ." },
+  play:   { icon: "🏆", desc: "Без подсказок и только одна попытка. Проверь, чему ты научился!" },
+  clocks: { icon: "🕒", desc: "Дано время — найди часы, на которых стрелки стоят правильно. Одна попытка." },
+};
+try { const k = localStorage.getItem("kind"); if (KINDS[k]) kind = k; } catch (e) {}
+
+function renderLevels() {
+  document.querySelectorAll("#modes button").forEach(b => b.classList.toggle("active", b.dataset.k === kind));
+  $("modeDesc").textContent = KINDS[kind].desc;
+  $("levels").innerHTML = "";
+  LEVELS.forEach(l => {
+    const b = document.createElement("div");
+    b.className = "level-row";
+    const buttons = kind === "play"
+      ? `<button class="mode" data-t="choice">🔘 Выбор из 4</button><button class="mode" data-t="input">⌨️ Ввод</button>`
+      : `<button class="mode" data-t="choice">▶ Начать</button>`;
+    b.innerHTML = `<span class="n">${l.id}</span><span class="t">${l.name}<small>${l.desc}</small></span>${buttons}`;
+    b.querySelectorAll(".mode").forEach(btn => btn.onclick = () => start(l, kind, btn.dataset.t));
+    $("levels").appendChild(b);
+  });
+}
+document.querySelectorAll("#modes button").forEach(b => b.onclick = () => {
+  kind = b.dataset.k;
+  try { localStorage.setItem("kind", kind); } catch (e) {}
+  renderLevels();
 });
+renderLevels();
 $("back").onclick = $("toMenu").onclick = showMenu;
-$("again").onclick = () => start(level, mode);
+$("again").onclick = () => start(level, kind, answerType);
 
 function show(id) {
   document.body.classList.toggle("playing", id === "game");
@@ -388,10 +435,19 @@ function show(id) {
 function showMenu() { stopSpeak(); show("menu"); }
 
 /* ---------- игра ---------- */
-function start(l, m) {
-  level = l; mode = m || mode; qIndex = 0; score = 0; lastKey = null;
-  $("levelName").textContent = `Уровень ${l.id}`;
+function start(l, k, type) {
+  level = l; kind = k; answerType = type || "choice";
+  training = kind === "learn";
+  mode = kind === "clocks" ? "clocks" : answerType;
+  qIndex = 0; score = 0; lastKey = null;
+  $("levelName").textContent = `${KINDS[kind].icon} Ур. ${l.id}`;
   $("tipText").innerHTML = "💡 " + l.tip;
+  $("levelTip").classList.toggle("hidden", !training);
+  const clocks = mode === "clocks";
+  $("clock").classList.toggle("hidden", clocks);
+  document.querySelector(".legend").classList.toggle("hidden", clocks);
+  $("timeCard").classList.toggle("hidden", !clocks);
+  $("choices").classList.toggle("clock-grid", clocks);
   const inp = mode === "input";
   $("answer").classList.toggle("hidden", !inp);
   $("check").classList.toggle("hidden", !inp);
@@ -419,7 +475,10 @@ function nextQuestion() {
   if (qIndex >= ROUNDS) return finish();
   current = randomTime();
   guessH = 12; guessM = 0; answered = false; attempts = 0; revealed = false;
-  drawClock(current.h, current.m);
+  if (mode === "clocks") {
+    $("timeBig").textContent = level.step === 0 ? current.h + ":00" : fmt(current.h, current.m);
+    $("timeWords").textContent = timeWords(current.h, current.m);
+  } else drawClock(current.h, current.m);
   updateAnswer();
   $("feedback").classList.add("hidden");
   $("next").classList.add("hidden");
@@ -448,11 +507,12 @@ $("mDn").onclick = () => { guessM = (guessM - stepM() + 60) % 60; updateAnswer()
 $("check").onclick = () => submit(guessH, level.step === 0 ? 0 : guessM);
 
 function fmt(h, m) { return h + ":" + pad(m); }
+function timeWords(h, m) { return m === 0 ? `${h} ${hoursWord(h)} ровно` : `${h} ${hoursWord(h)} ${m} ${minWord(m)}`; }
 
 function makeChoices() {
   const box = $("choices");
   box.innerHTML = "";
-  if (mode !== "choice") return;
+  if (mode === "input") return;
   const { h, m } = current, key = (a, b) => a + ":" + b;
   const grid = level.minutes || null;
   const okM = x => (x + 60) % 60;
@@ -470,21 +530,31 @@ function makeChoices() {
     cand.push([nextHour(h), snap(m + st)], [prevHour(h), snap(m - st)]);
   }
   const seen = new Set([key(h, m)]), opts = [{ h, m }];
+  // на картинке часы с разницей в минуту не отличить — для режима «Найди часы» нужна заметная разница
+  const close = (ch, cm) => mode === "clocks" && opts.some(o => o.h === ch && Math.min(Math.abs(o.m - cm), 60 - Math.abs(o.m - cm)) < 5);
   shuffle(cand).forEach(([ch, cm]) => {
     const k = key(ch, cm);
-    if (opts.length < 4 && !seen.has(k)) { seen.add(k); opts.push({ h: ch, m: cm }); }
+    if (opts.length < 4 && !seen.has(k) && !close(ch, cm)) { seen.add(k); opts.push({ h: ch, m: cm }); }
   });
   while (opts.length < 4) { // добор случайными, если подсказок не хватило
     const ch = 1 + Math.floor(Math.random() * 12);
     const cm = level.step === 0 ? 0 : (grid ? grid[Math.floor(Math.random() * grid.length)] : Math.floor(Math.random() * 60));
     const k = key(ch, cm);
-    if (!seen.has(k)) { seen.add(k); opts.push({ h: ch, m: cm }); }
+    if (!seen.has(k) && !close(ch, cm)) { seen.add(k); opts.push({ h: ch, m: cm }); }
   }
   shuffle(opts).forEach((o, i) => {
     const b = document.createElement("button");
-    b.textContent = level.step === 0 ? o.h + ":00" : fmt(o.h, o.m);
     b.dataset.h = o.h; b.dataset.m = o.m;
-    b.setAttribute("aria-label", `Вариант ${i + 1}: ${timeText(o.h, o.m)}`);
+    if (mode === "clocks") {
+      const svg = document.createElementNS(ns, "svg");
+      svg.setAttribute("viewBox", "0 0 200 200");
+      drawClockInto(svg, o.h, o.m, false);
+      b.appendChild(svg);
+      b.setAttribute("aria-label", `Часы, вариант ${i + 1}`);
+    } else {
+      b.textContent = level.step === 0 ? o.h + ":00" : fmt(o.h, o.m);
+      b.setAttribute("aria-label", `Вариант ${i + 1}: ${timeText(o.h, o.m)}`);
+    }
     b.onclick = () => choose(o, b);
     box.appendChild(b);
   });
@@ -500,6 +570,7 @@ function shuffle(a) {
    Правильный вариант подсвечивается только после просмотра подсказки или её прослушивания. */
 function choose(o, btn) {
   if (answered) return;
+  if (!training) { submit(o.h, o.m, false); return; } // основной режим: одна попытка
   if (o.h === current.h && o.m === current.m) {
     stopSpeak();
     submit(o.h, o.m, attempts > 0 || revealed);
@@ -513,7 +584,7 @@ function choose(o, btn) {
 }
 
 function revealAnswer() {
-  if (revealed || mode !== "choice") return;
+  if (revealed || !training) return;
   revealed = true;
   document.querySelectorAll("#choices button").forEach(b => {
     if (+b.dataset.h === current.h && +b.dataset.m === current.m) b.classList.add("right");
@@ -567,7 +638,7 @@ $("next").onclick = nextQuestion;
 /* ---------- клавиатура (компьютер) ---------- */
 document.addEventListener("keydown", e => {
   if ($("game").classList.contains("hidden")) return;
-  if (mode === "choice" && !answered && /^[1-4]$/.test(e.key)) {
+  if (mode !== "input" && !answered && /^[1-4]$/.test(e.key)) {
     const b = $("choices").children[+e.key - 1]; if (b) b.click(); return;
   }
   if (e.key === "Enter" && (mode === "input" || answered)) {
@@ -655,6 +726,22 @@ function explainMistake(h, m, gh, gm) {
   return out;
 }
 
+function explainClockMistake(h, m, gh, gm) {
+  const out = [];
+  if (gh === ((m / 5 | 0) || 12) && gm === (h % 12) * 5 && m % 5 === 0 && (gh !== h || gm !== m)) {
+    out.push(`😕 На выбранных часах стрелки перепутаны: короткая красная показывает минуты, а длинная синяя — часы.`);
+    return out;
+  }
+  if (gh !== h) {
+    out.push(`😕 <b>Часы:</b> на выбранных часах короткая красная стрелка у цифры <b>${gh}</b>, а нужно <b>${h}</b>. Короткая стрелка показывает час, который она <b>уже прошла</b>.`);
+  }
+  if (gm !== m) {
+    const want = m % 5 === 0 ? `на цифру <b>${m / 5 || 12}</b> (${m / 5 || 12} × 5 = ${m})` : `чуть дальше цифры <b>${Math.floor(m / 5) || 12}</b>`;
+    out.push(`😕 <b>Минуты:</b> на выбранных часах длинная синяя стрелка показывает ${gm} ${minWord(gm)}, а нужно ${m}. Она должна смотреть ${want}.`);
+  }
+  return out;
+}
+
 function showFeedback(ok, gh, gm, assisted) {
   const f = $("feedback");
   f.className = "feedback " + (ok ? "ok" : "bad");
@@ -665,6 +752,13 @@ function showFeedback(ok, gh, gm, assisted) {
     html = `<h3>${assisted ? "👍 Верно, с подсказкой!" : "🎉 Правильно!"}${speakBtn}</h3><div>${timeText(current.h, current.m)}</div>`;
     html += `<details style="margin-top:6px"><summary>Почему так?</summary><ul>` +
       explainCorrect(current.h, current.m).map(s => `<li>${s}</li>`).join("") + `</ul></details>`;
+  } else if (mode === "clocks") {
+    html = `<h3>Не совсем 🙂${speakBtn}</h3>`;
+    html += `<div>Нужно найти часы, которые показывают <b>${timeText(current.h, current.m)}</b>.
+             Ты выбрал(а) часы с временем <b>${level.step === 0 ? gh + ":00" : fmt(gh, gm)}</b>.</div>`;
+    html += `<ul>` + explainClockMistake(current.h, current.m, gh, gm).map(s => `<li>${s}</li>`).join("") + `</ul>`;
+    html += `<div style="margin-top:8px"><b>Как найти нужные часы:</b></div><ul>` +
+      explainCorrect(current.h, current.m).map(s => `<li>${s}</li>`).join("") + `</ul>`;
   } else {
     html = `<h3>Не совсем 🙂${speakBtn}</h3>`;
     html += `<div>Ты ответил(а): <b>${level.step === 0 ? gh + ":00" : gh + ":" + pad(gm)}</b>.
@@ -764,7 +858,10 @@ function el(name, attrs, parent) {
 }
 
 function drawClock(h, m) {
-  const svg = $("clock");
+  drawClockInto($("clock"), h, m, level.numbers && training); // в основном режиме цифры минут — это подсказка, их нет
+}
+
+function drawClockInto(svg, h, m, minuteNumbers) {
   svg.innerHTML = "";
   el("circle", { cx: 100, cy: 100, r: 96, fill: "#fffdf5", stroke: "#2b2d42", "stroke-width": 5 }, svg);
   for (let i = 0; i < 60; i++) {
@@ -780,7 +877,7 @@ function drawClock(h, m) {
                            "text-anchor": "middle", "font-size": 20, "font-weight": "bold",
                            fill: "#2b2d42" }, svg);
     t.textContent = n;
-    if (level.numbers) { // подпись минут снаружи не помещается — рисуем мелко внутри кольца
+    if (minuteNumbers) { // подпись минут снаружи не помещается — рисуем мелко внутри кольца
       const tm = el("text", { x: 100 + 52 * Math.sin(a), y: 100 - 52 * Math.cos(a) + 3.5,
                               "text-anchor": "middle", "font-size": 9, fill: "#1d6fd1" }, svg);
       tm.textContent = n * 5;
