@@ -23,6 +23,17 @@
   button:active { transform: scale(.97); }
   button:disabled { opacity: .5; cursor: default; }
   .levels { display: grid; gap: 10px; }
+  .level-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; background: #fff3c4; border-radius: 16px; padding: 10px; }
+  .level-row .n { background: var(--accent); border-radius: 50%; width: 40px; height: 40px; display: grid; place-items: center; flex: none; font-weight: bold; }
+  .level-row .t { flex: 1 1 140px; font-weight: bold; }
+  .level-row small { display: block; font-weight: normal; color: var(--muted); font-size: .85rem; }
+  .level-row .mode { flex: 1 1 120px; white-space: nowrap; font-size: .95rem; padding: 8px 10px; background: #fff; border: 2px solid var(--accent); }
+  .level-row .mode:hover { background: #ffe9a0; }
+  .choices { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 8px 0; }
+  .choices button { font-size: 1.6rem; padding: 16px 8px; background: #fff3c4; border: 3px solid var(--accent); }
+  .choices button:disabled { opacity: 1; color: var(--ink); cursor: default; }
+  .choices button.right { background: #c9f0d3; border-color: var(--ok); }
+  .choices button.wrong { background: #fbd0d4; border-color: var(--bad); }
   .level { display: flex; align-items: center; gap: 12px; text-align: left; width: 100%; background: #fff3c4; }
   .level .n { background: var(--accent); border-radius: 50%; width: 40px; height: 40px;
               display: grid; place-items: center; flex: none; }
@@ -118,6 +129,7 @@
     </div>
     </div>
     <div class="col-ctrl">
+    <div class="choices hidden" id="choices"></div>
     <div class="answer" id="answer">
       <div class="spin">
         <button id="hUp" aria-label="часы больше">▲</button>
@@ -180,18 +192,20 @@ const $ = id => document.getElementById(id);
 const pad = n => String(n).padStart(2, "0");
 const ns = "http://www.w3.org/2000/svg";
 
-let level, qIndex, score, current, guessH, guessM, answered, lastKey;
+let mode = "choice", level, qIndex, score, current, guessH, guessM, answered, lastKey;
 
 /* ---------- меню ---------- */
 LEVELS.forEach(l => {
-  const b = document.createElement("button");
-  b.className = "level";
-  b.innerHTML = `<span class="n">${l.id}</span><span>${l.name}<small>${l.desc}</small></span>`;
-  b.onclick = () => start(l);
+  const b = document.createElement("div");
+  b.className = "level-row";
+  b.innerHTML = `<span class="n">${l.id}</span><span class="t">${l.name}<small>${l.desc}</small></span>
+    <button class="mode" data-m="choice">🔘 Выбор из 4</button>
+    <button class="mode" data-m="input">⌨️ Ввод</button>`;
+  b.querySelectorAll(".mode").forEach(btn => btn.onclick = () => start(l, btn.dataset.m));
   $("levels").appendChild(b);
 });
 $("back").onclick = $("toMenu").onclick = showMenu;
-$("again").onclick = () => start(level);
+$("again").onclick = () => start(level, mode);
 
 function show(id) {
   ["menu", "game", "end"].forEach(s => $(s).classList.toggle("hidden", s !== id));
@@ -199,10 +213,14 @@ function show(id) {
 function showMenu() { show("menu"); }
 
 /* ---------- игра ---------- */
-function start(l) {
-  level = l; qIndex = 0; score = 0; lastKey = null;
+function start(l, m) {
+  level = l; mode = m || mode; qIndex = 0; score = 0; lastKey = null;
   $("levelName").textContent = `Уровень ${l.id}`;
   $("levelTip").innerHTML = "💡 " + l.tip;
+  const inp = mode === "input";
+  $("answer").classList.toggle("hidden", !inp);
+  $("check").classList.toggle("hidden", !inp);
+  $("choices").classList.toggle("hidden", inp);
   $("mSpin").classList.toggle("hidden", l.step === 0);
   document.querySelector(".colon").classList.toggle("hidden", l.step === 0);
   show("game");
@@ -229,8 +247,9 @@ function nextQuestion() {
   updateAnswer();
   $("feedback").classList.add("hidden");
   $("next").classList.add("hidden");
-  $("check").classList.remove("hidden");
+  if (mode === "input") $("check").classList.remove("hidden");
   setSpinEnabled(true);
+  makeChoices();
   $("bar").style.width = (qIndex / ROUNDS * 100) + "%";
   $("score").textContent = "⭐ " + score;
 }
@@ -250,11 +269,66 @@ $("hDn").onclick = () => { guessH = (guessH + 10) % 12 + 1; updateAnswer(); };
 $("mUp").onclick = () => { guessM = (guessM + stepM()) % 60; updateAnswer(); };
 $("mDn").onclick = () => { guessM = (guessM - stepM() + 60) % 60; updateAnswer(); };
 
-$("check").onclick = () => {
+$("check").onclick = () => submit(guessH, level.step === 0 ? 0 : guessM);
+
+function fmt(h, m) { return h + ":" + pad(m); }
+
+function makeChoices() {
+  const box = $("choices");
+  box.innerHTML = "";
+  if (mode !== "choice") return;
+  const { h, m } = current, key = (a, b) => a + ":" + b;
+  const grid = level.minutes || null;
+  const okM = x => (x + 60) % 60;
+  const snap = x => level.step > 1 ? Math.round(okM(x) / level.step) * level.step % 60 : okM(x);
+  const cand = [];
+  if (level.step === 0) {
+    [1, -1, 2, -2, 6].forEach(d => cand.push([(h + d + 11) % 12 + 1, 0]));
+  } else {
+    const st = stepM();
+    cand.push([h, snap(m + 30)]);                                  // другая сторона
+    cand.push([nextHour(h), m], [prevHour(h), m]);                 // час ± 1
+    cand.push([(m / 5 | 0) || 12, snap((h % 12) * 5)]);            // перепутаны стрелки
+    cand.push([h, snap(Math.floor(m / 5))]);                       // цифра как минуты
+    cand.push([h, snap(m + st)], [h, snap(m - st)]);               // соседнее деление
+    cand.push([nextHour(h), snap(m + st)], [prevHour(h), snap(m - st)]);
+  }
+  const seen = new Set([key(h, m)]), opts = [{ h, m }];
+  shuffle(cand).forEach(([ch, cm]) => {
+    const k = key(ch, cm);
+    if (opts.length < 4 && !seen.has(k)) { seen.add(k); opts.push({ h: ch, m: cm }); }
+  });
+  while (opts.length < 4) { // добор случайными, если подсказок не хватило
+    const ch = 1 + Math.floor(Math.random() * 12);
+    const cm = level.step === 0 ? 0 : (grid ? grid[Math.floor(Math.random() * grid.length)] : Math.floor(Math.random() * 60));
+    const k = key(ch, cm);
+    if (!seen.has(k)) { seen.add(k); opts.push({ h: ch, m: cm }); }
+  }
+  shuffle(opts).forEach((o, i) => {
+    const b = document.createElement("button");
+    b.textContent = level.step === 0 ? o.h + ":00" : fmt(o.h, o.m);
+    b.dataset.h = o.h; b.dataset.m = o.m;
+    b.setAttribute("aria-label", `Вариант ${i + 1}: ${timeText(o.h, o.m)}`);
+    b.onclick = () => submit(o.h, o.m);
+    box.appendChild(b);
+  });
+}
+
+function shuffle(a) {
+  a = a.slice();
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+
+function submit(guessH, gm) {
   if (answered) return;
   answered = true;
-  const gm = level.step === 0 ? 0 : guessM;
   const ok = guessH === current.h && gm === current.m;
+  document.querySelectorAll("#choices button").forEach(b => {
+    b.disabled = true;
+    if (+b.dataset.h === current.h && +b.dataset.m === current.m) b.classList.add("right");
+    else if (+b.dataset.h === guessH && +b.dataset.m === gm) b.classList.add("wrong");
+  });
   if (ok) score++;
   $("score").textContent = "⭐ " + score;
   showFeedback(ok, guessH, gm);
@@ -264,19 +338,22 @@ $("check").onclick = () => {
   $("next").textContent = qIndex === ROUNDS - 1 ? "Результат 🏁" : "Дальше →";
   qIndex++;
   $("bar").style.width = (qIndex / ROUNDS * 100) + "%";
-};
+}
 $("next").onclick = nextQuestion;
 
 /* ---------- клавиатура (компьютер) ---------- */
 document.addEventListener("keydown", e => {
   if ($("game").classList.contains("hidden")) return;
-  if (e.key === "Enter") {
+  if (mode === "choice" && !answered && /^[1-4]$/.test(e.key)) {
+    const b = $("choices").children[+e.key - 1]; if (b) b.click(); return;
+  }
+  if (e.key === "Enter" && (mode === "input" || answered)) {
     const b = answered ? $("next") : $("check");
     if (document.activeElement && document.activeElement.tagName === "BUTTON" && document.activeElement !== b) return;
     e.preventDefault(); b.click();
   } else if (!answered) {
     const map = { ArrowUp: "hUp", ArrowDown: "hDn", ArrowRight: "mUp", ArrowLeft: "mDn" };
-    if (map[e.key]) { e.preventDefault(); $(map[e.key]).click(); }
+    if (mode === "input" && map[e.key]) { e.preventDefault(); $(map[e.key]).click(); }
   }
 });
 
