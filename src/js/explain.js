@@ -38,7 +38,7 @@ export function explainMistake(h, m, gh, gm) {
     if (!minOk && state.level.step !== 0) {
       const asNumber = Math.floor(m / 5);
       if (m % 5 === 0 && gm === asNumber) out.push(t("emMinNum", asNumber, m));
-      else if (gm % 5 === 0 && m % 5 === 0 && Math.abs(gm - m) === 5) out.push(t("emMinOne", m / 5 || 12, m, gm));
+      else if (gm % 5 === 0 && m % 5 === 0 && (Math.abs(gm - m) === 5 || Math.abs(gm - m) === 55)) out.push(t("emMinOne", m / 5 || 12, m, gm));
       else if (gm === (m + 30) % 60) out.push(t("emMinOpp", m, gm));
       else if (state.level.step === 1 && Math.abs(gm - m) <= 3) out.push(t("emMinClose", Math.abs(gm - m)));
       else out.push(t("emMinGen", m, gm));

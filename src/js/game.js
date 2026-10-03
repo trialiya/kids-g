@@ -255,7 +255,7 @@ function finish() {
   $("endStars").textContent = "★".repeat(stars) + "☆".repeat(3 - stars);
   const next = LEVELS[state.level.id] ;
   $("endText").textContent = t("endScore", state.score, ROUNDS) +
-    (stars >= 2 && next ? t("endNext", lv(next).name) : stars < 2 ? t("endRetry") : "");
+    (stars >= 2 && next ? t("endNext", lv(next).name) : stars < 2 ? t("endRetry", state.training) : "");
   show("end");
   if (stars >= 2) { sfx.win(); confetti(stars === 3 ? 40 : 24); }
 }
