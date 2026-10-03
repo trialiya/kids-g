@@ -58,7 +58,7 @@
   .feedback h3 { margin: 0 0 6px; }
   .feedback ul { margin: 6px 0 0; padding-left: 20px; }
   .feedback li { margin-bottom: 4px; }
-  .next { margin-top: 10px; width: 100%; }
+  .next { margin-top: 10px; width: 100%; position: sticky; bottom: max(8px, env(safe-area-inset-bottom)); z-index: 5; box-shadow: 0 -6px 12px rgba(255,255,255,.9), 0 3px 10px rgba(0,0,0,.2); }
   .result { text-align: center; }
   .stars { font-size: 2.6rem; letter-spacing: 4px; }
   .tip { background: #eaf3ff; border-radius: 14px; padding: 10px 14px; margin-bottom: 12px; font-size: .95rem; line-height: 1.4; }
@@ -358,6 +358,7 @@ function submit(guessH, gm) {
   setSpinEnabled(false);
   $("check").classList.add("hidden");
   $("next").classList.remove("hidden");
+  $("next").scrollIntoView({ block: "nearest", behavior: "smooth" });
   $("next").textContent = qIndex === ROUNDS - 1 ? "Результат 🏁" : "Дальше →";
   qIndex++;
   $("bar").style.width = (qIndex / ROUNDS * 100) + "%";
