@@ -2,7 +2,7 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [main, master, claude/wizardly-johnson-dr8s9v]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -23,8 +23,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
-        with:
-          enablement: true
       - name: Collect site files
         run: |
           mkdir _site
