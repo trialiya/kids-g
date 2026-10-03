@@ -98,7 +98,7 @@
     h1, .sub { display: none; }
     .game-body { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
     svg.clock { max-width: 240px; }
-    #levelTip { display: none; }
+    #game #levelTip { display: none; }
   }
 
   /* компактный экран игры на телефоне: часы и ответ влезают без прокрутки */
@@ -132,6 +132,9 @@
   .hintnote { margin-top: 6px; color: var(--muted); font-size: .9rem; }
   .choices button.right:not(:disabled), .choices button.right { animation: pulse 1s ease 2; }
   @keyframes pulse { 50% { transform: scale(1.05); } }
+  #levelTip { display: flex; align-items: center; gap: 8px; }
+  #levelTip #tipText { flex: 1; }
+  .tipspeak { margin-left: 0; width: 40px; height: 40px; }
   .speak.on { background: var(--min); }
 </style>
 </head>
@@ -162,7 +165,10 @@
       <button class="fs hidden" id="fsGame" aria-label="На весь экран">⛶</button>
     </div>
     <div class="progress"><div id="bar"></div></div>
-    <div id="levelTip" class="tip"></div>
+    <div id="levelTip" class="tip">
+      <span id="tipText"></span>
+      <button class="speak tipspeak hidden" id="speakTip" type="button" data-label="Послушать, как определять время" aria-label="Послушать, как определять время" title="Послушать подсказку">🔊</button>
+    </div>
     <div class="game-body">
     <div class="col-clock">
     <svg class="clock" id="clock" viewBox="0 0 200 200" role="img" aria-label="Часы"></svg>
@@ -292,7 +298,7 @@ function showMenu() { stopSpeak(); show("menu"); }
 function start(l, m) {
   level = l; mode = m || mode; qIndex = 0; score = 0; lastKey = null;
   $("levelName").textContent = `Уровень ${l.id}`;
-  $("levelTip").innerHTML = "💡 " + l.tip;
+  $("tipText").innerHTML = "💡 " + l.tip;
   const inp = mode === "input";
   $("answer").classList.toggle("hidden", !inp);
   $("check").classList.toggle("hidden", !inp);
@@ -434,10 +440,10 @@ function showRetryFeedback(gh, gm) {
   $("hint").addEventListener("toggle", () => { if ($("hint").open) revealAnswer(); });
   const sp = $("speak");
   if (sp) sp.onclick = () => {
-    if (speaking) return stopSpeak();
+    if (speaking && activeSpeak === sp) return stopSpeak();
     revealAnswer();
     $("hint").open = true;
-    speak(f);
+    speak(f, sp);
   };
 }
 
@@ -574,7 +580,7 @@ function showFeedback(ok, gh, gm, assisted) {
   }
   f.innerHTML = html;
   const sp = $("speak");
-  if (sp) sp.onclick = () => speaking ? stopSpeak() : speak(f);
+  if (sp) { sp.dataset.label = "Прочитать объяснение вслух"; sp.onclick = () => toggleSpeak(f, sp); }
 }
 
 /* ---------- чтение вслух ---------- */
@@ -592,32 +598,54 @@ function speechText(box) {
     .replace(/Почему так\?/g, "")
     .replace(/\(\d+:\d\d\)/g, "") // «(7:40)» дублирует слова
     .replace(/(\d+):(\d\d)/g, (m, h, mm) => mm === "00" ? h + " ровно" : h + " " + +mm)
-    .replace(/×/g, " умножить на ").replace(/→/g, " ")
+    .replace(/×/g, " умножить на ").replace(/→/g, " это ")
     .replace(/\(а\)|\(ась\)/g, "")
     .replace(/\s+/g, " ").trim();
 }
 
-function setSpeakUi(on) {
+let activeSpeak = null, currentU = null;
+
+function setSpeakUi(on, btn) {
   speaking = on;
-  const b = $("speak");
-  if (b) { b.textContent = on ? "⏹" : "🔊"; b.classList.toggle("on", on); b.setAttribute("aria-label", on ? "Остановить чтение" : "Прочитать объяснение вслух"); }
+  if (btn) activeSpeak = btn;
+  if (activeSpeak) {
+    activeSpeak.textContent = on ? "⏹" : "🔊";
+    activeSpeak.classList.toggle("on", on);
+    activeSpeak.setAttribute("aria-label", on ? "Остановить чтение" : activeSpeak.dataset.label || "Прочитать вслух");
+  }
+  if (!on) activeSpeak = null;
 }
 
-function speak(box) {
+// Нажатие на 🔊: читает box или, если эта кнопка уже читает, останавливает
+function toggleSpeak(box, btn) {
+  if (speaking && activeSpeak === btn) return stopSpeak();
+  speak(box, btn);
+}
+
+function speak(box, btn) {
+  if (speaking) setSpeakUi(false); // вернуть иконку у предыдущей кнопки
   speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(speechText(box));
+  currentU = u;
   u.lang = "ru-RU";
   const v = speechSynthesis.getVoices().find(x => x.lang && x.lang.toLowerCase().startsWith("ru"));
   if (v) u.voice = v;
   u.rate = 0.9;
-  u.onend = u.onerror = () => setSpeakUi(false);
-  setSpeakUi(true);
+  u.onend = u.onerror = () => { if (currentU === u) setSpeakUi(false); }; // cancel() старой реплики не сбрасывает новую
+  setSpeakUi(true, btn);
   speechSynthesis.speak(u);
 }
 
 function stopSpeak() {
+  currentU = null;
   if (canSpeak) speechSynthesis.cancel();
   setSpeakUi(false);
+}
+
+/* ---------- подсказка «как определять время» ---------- */
+if (canSpeak) {
+  $("speakTip").classList.remove("hidden");
+  $("speakTip").onclick = () => toggleSpeak($("levelTip"), $("speakTip"));
 }
 
 /* ---------- итог ---------- */
