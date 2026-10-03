@@ -1,0 +1,19 @@
+/* Меню: язык, режимы, список уровней, кнопки звука и полного экрана */
+.levels { display: grid; gap: 10px; }
+.level-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; background: #fff3c4; border-radius: 16px; padding: 10px; }
+.level-row .n { background: var(--accent); border-radius: 50%; width: 40px; height: 40px; display: grid; place-items: center; flex: none; font-weight: bold; }
+.level-row .t { flex: 1 1 140px; font-weight: bold; }
+.level-row small { display: block; font-weight: normal; color: var(--muted); font-size: .85rem; }
+.level-row .mode { flex: 1 1 120px; white-space: nowrap; font-size: .95rem; padding: 8px 10px; background: #fff; border: 2px solid var(--accent); }
+.level-row .mode:hover { background: #ffe9a0; }
+.fs { display: block; margin: 0 auto 12px; background: #fff; border: 2px solid var(--accent); padding: 8px 14px; font-size: .95rem; }
+.ios-hint { text-align: center; font-size: .85rem; color: var(--muted); margin: -4px 0 12px; }
+.langsw { display: flex; justify-content: center; margin: 2px 0 0; }
+.langsw button { padding: 4px 12px; min-height: 32px; font-size: .85rem; background: #fff; border: 2px solid var(--accent); }
+.langsw button:first-child { border-radius: 14px 0 0 14px; }
+.langsw button:last-child { border-radius: 0 14px 14px 0; border-left-width: 0; }
+.langsw button.active { background: var(--accent); }
+.modes { display: flex; gap: 6px; margin-bottom: 8px; }
+.modes button { flex: 1; padding: 8px 4px; font-size: .95rem; background: #eee; border: 2px solid transparent; }
+.modes button.active { background: var(--accent); border-color: var(--ink); }
+.modedesc { margin: 0 0 12px; text-align: center; color: var(--muted); font-size: .9rem; line-height: 1.35; }

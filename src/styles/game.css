@@ -1,0 +1,46 @@
+/* Экран игры: шапка, часы, ответы, обратная связь, итог */
+* { box-sizing: border-box; }
+.choices { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 8px 0; }
+.choices button { font-size: 1.6rem; padding: 16px 8px; background: #fff3c4; border: 3px solid var(--accent); }
+.choices button:disabled { opacity: 1; color: var(--ink); cursor: default; }
+.choices button.right { background: #c9f0d3; border-color: var(--ok); }
+.choices button.wrong { background: #fbd0d4; border-color: var(--bad); }
+.top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; gap: 8px; }
+.top button { padding: 6px 12px; font-size: .95rem; background: #eee; }
+.progress { height: 10px; background: #eee; border-radius: 5px; overflow: hidden; margin-bottom: 8px; }
+.progress > div { height: 100%; background: var(--ok); width: 0; transition: width .3s; }
+svg.clock { width: 100%; max-width: 320px; display: block; margin: 0 auto; }
+.legend { display: flex; justify-content: center; gap: 16px; font-size: .95rem; margin: 4px 0 8px; }
+.dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 4px; vertical-align: -1px; }
+.answer { display: flex; justify-content: center; align-items: center; gap: 10px; margin: 8px 0; }
+.spin { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.spin .val { font-size: 2.4rem; font-weight: bold; min-width: 2.2ch; text-align: center; }
+.spin button { width: 56px; padding: 6px 0; }
+.spin .lbl { font-size: .8rem; color: var(--muted); }
+.colon { font-size: 2.4rem; font-weight: bold; }
+.check { display: block; margin: 8px auto 0; width: 100%; background: var(--ok); color: #fff; }
+.feedback { margin-top: 12px; padding: 12px 14px; border-radius: 14px; line-height: 1.45; }
+.feedback.bad { background: #fde8ea; }
+.feedback h3 { margin: 0 0 6px; }
+.feedback ul { margin: 6px 0 0; padding-left: 20px; }
+.feedback li { margin-bottom: 4px; }
+.next { margin-top: 10px; width: 100%; position: sticky; bottom: max(8px, env(safe-area-inset-bottom)); z-index: 5; box-shadow: 0 -6px 12px rgba(255,255,255,.9), 0 3px 10px rgba(0,0,0,.2); }
+.result { text-align: center; }
+.stars { font-size: 2.6rem; letter-spacing: 4px; }
+.game-body { display: block; }
+.top .fs { display: inline-block; margin: 0; padding: 4px 10px; min-height: 36px; background: #eee; border: 0; font-size: 1.1rem; }
+.top .fs.hidden { display: none !important; }
+.feedback h3 { display: flex; align-items: center; gap: 8px; }
+.speak { margin-left: auto; width: 44px; height: 44px; padding: 0; border-radius: 50%; background: #fff; border: 2px solid var(--min); font-size: 1.3rem; line-height: 1; flex: none; }
+.hintnote { margin-top: 6px; color: var(--muted); font-size: .9rem; }
+#levelTip { display: flex; align-items: center; gap: 8px; }
+#levelTip #tipText { flex: 1; }
+.tipspeak { margin-left: 0; width: 40px; height: 40px; }
+.speak.on { background: var(--min); }
+#game .top > *, #game .top button { white-space: nowrap; }
+.timecard { text-align: center; padding: 8px 0 4px; }
+.timecard .big { font-size: 4rem; font-weight: bold; line-height: 1.1; }
+.timecard .words { color: var(--muted); font-size: 1.05rem; }
+.choices.clock-grid { max-width: min(100%, 460px); margin-left: auto; margin-right: auto; }
+.choices.clock-grid button { padding: 6px; font-size: 1rem; aspect-ratio: 1; display: grid; place-items: center; }
+.choices.clock-grid svg { width: 100%; height: 100%; display: block; }

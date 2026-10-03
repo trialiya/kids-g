@@ -1,6 +1,7 @@
-// Кэшируем файлы игры, чтобы она открывалась без интернета.
-const CACHE = "kids-clock-v1";
-const FILES = ["./", "index.html", "manifest.json", "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png"];
+// Service worker: кэширует файлы игры, чтобы она открывалась без интернета.
+// Список файлов и версия подставляются при сборке (vite.config.js).
+const CACHE = "kids-clock-__VERSION__";
+const FILES = __PRECACHE__;
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));
@@ -17,5 +18,5 @@ self.addEventListener("fetch", e => {
     const copy = res.clone();
     caches.open(CACHE).then(c => c.put(e.request, copy));
     return res;
-  }).catch(() => caches.match(e.request).then(r => r || caches.match("index.html"))));
+  }).catch(() => caches.match(e.request).then(r => r || caches.match("./"))));
 });
