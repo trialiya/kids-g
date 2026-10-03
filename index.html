@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#fff8e7">
+<title>Который час?</title>
+<style>
+  :root {
+    --bg: #fff8e7; --card: #ffffff; --ink: #2b2d42; --muted: #6b6f85;
+    --hour: #e63946; --min: #1d6fd1; --ok: #2a9d4b; --bad: #d62839; --accent: #ffb703;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Comic Sans MS", "Trebuchet MS", system-ui, sans-serif;
+         background: var(--bg); color: var(--ink); min-height: 100vh; }
+  main { max-width: 560px; margin: 0 auto; padding: 16px; }
+  h1 { text-align: center; margin: 8px 0 4px; font-size: 2rem; }
+  .sub { text-align: center; color: var(--muted); margin: 0 0 16px; }
+  .card { background: var(--card); border-radius: 20px; padding: 16px; box-shadow: 0 4px 14px rgba(0,0,0,.08); }
+  .hidden { display: none !important; }
+  button { font: inherit; cursor: pointer; border: 0; border-radius: 14px; padding: 12px 18px;
+           background: var(--accent); color: var(--ink); font-weight: bold; font-size: 1.1rem; }
+  button:active { transform: scale(.97); }
+  button:disabled { opacity: .5; cursor: default; }
+  .levels { display: grid; gap: 10px; }
+  .level { display: flex; align-items: center; gap: 12px; text-align: left; width: 100%; background: #fff3c4; }
+  .level .n { background: var(--accent); border-radius: 50%; width: 40px; height: 40px;
+              display: grid; place-items: center; flex: none; }
+  .level small { display: block; font-weight: normal; color: var(--muted); font-size: .85rem; }
+  .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; gap: 8px; }
+  .top button { padding: 6px 12px; font-size: .95rem; background: #eee; }
+  .progress { height: 10px; background: #eee; border-radius: 5px; overflow: hidden; margin-bottom: 8px; }
+  .progress > div { height: 100%; background: var(--ok); width: 0; transition: width .3s; }
+  svg.clock { width: 100%; max-width: 320px; display: block; margin: 0 auto; }
+  .legend { display: flex; justify-content: center; gap: 16px; font-size: .95rem; margin: 4px 0 8px; }
+  .dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 4px; vertical-align: -1px; }
+  .answer { display: flex; justify-content: center; align-items: center; gap: 10px; margin: 8px 0; }
+  .spin { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .spin .val { font-size: 2.4rem; font-weight: bold; min-width: 2.2ch; text-align: center; }
+  .spin button { width: 56px; padding: 6px 0; }
+  .spin .lbl { font-size: .8rem; color: var(--muted); }
+  .colon { font-size: 2.4rem; font-weight: bold; }
+  .check { display: block; margin: 8px auto 0; width: 100%; background: var(--ok); color: #fff; }
+  .feedback { margin-top: 12px; padding: 12px 14px; border-radius: 14px; line-height: 1.45; }
+  .feedback.ok { background: #e3f6e8; }
+  .feedback.bad { background: #fde8ea; }
+  .feedback h3 { margin: 0 0 6px; }
+  .feedback ul { margin: 6px 0 0; padding-left: 20px; }
+  .feedback li { margin-bottom: 4px; }
+  .next { margin-top: 10px; width: 100%; }
+  .result { text-align: center; }
+  .stars { font-size: 2.6rem; letter-spacing: 4px; }
+  .tip { background: #eaf3ff; border-radius: 14px; padding: 10px 14px; margin-bottom: 12px; font-size: .95rem; line-height: 1.4; }
+  .row { display: flex; gap: 10px; margin-top: 12px; }
+  .row button { flex: 1; }
+
+  html { -webkit-text-size-adjust: 100%; }
+  button, .level { touch-action: manipulation; -webkit-tap-highlight-color: transparent; min-height: 44px; }
+  main { padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); }
+  .game-body { display: block; }
+  button:focus-visible { outline: 3px solid var(--min); outline-offset: 2px; }
+  .level:hover { background: #ffe9a0; }
+  @media (max-width: 380px) {
+    h1 { font-size: 1.6rem; }
+    .spin .val, .colon { font-size: 2rem; }
+    .spin button { width: 48px; }
+  }
+  /* планшет / компьютер: часы слева, ответ справа */
+  @media (min-width: 820px) {
+    main { max-width: 960px; }
+    #menu .levels { grid-template-columns: 1fr 1fr; }
+    .game-body { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
+    svg.clock { max-width: 400px; }
+    .spin .val { font-size: 3rem; }
+    .spin button { width: 72px; }
+    #end { max-width: 560px; margin: 0 auto; }
+  }
+  /* телефон в горизонтальном положении */
+  @media (max-height: 480px) and (orientation: landscape) {
+    h1, .sub { display: none; }
+    .game-body { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+    svg.clock { max-width: 240px; }
+    #levelTip { display: none; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>🕒 Который час?</h1>
+  <p class="sub">Учимся определять время по стрелочным часам<span class="hint-kb"></span></p>
+
+  <!-- Выбор уровня -->
+  <section id="menu" class="card">
+    <div class="tip">
+      <b>Как читать часы:</b><br>
+      <span style="color:var(--hour)"><b>Короткая красная</b></span> стрелка — часы.
+      <span style="color:var(--min)"><b>Длинная синяя</b></span> стрелка — минуты.
+      Одно большое деление (цифра) для длинной стрелки — это <b>5 минут</b>.
+    </div>
+    <div class="levels" id="levels"></div>
+  </section>
+
+  <!-- Игра -->
+  <section id="game" class="card hidden">
+    <div class="top">
+      <button id="back">← Уровни</button>
+      <span id="levelName"></span>
+      <span id="score">⭐ 0</span>
+    </div>
+    <div class="progress"><div id="bar"></div></div>
+    <div id="levelTip" class="tip"></div>
+    <div class="game-body">
+    <div class="col-clock">
+    <svg class="clock" id="clock" viewBox="0 0 200 200" role="img" aria-label="Часы"></svg>
+    <div class="legend">
+      <span><i class="dot" style="background:var(--hour)"></i>часы</span>
+      <span><i class="dot" style="background:var(--min)"></i>минуты</span>
+    </div>
+    </div>
+    <div class="col-ctrl">
+    <div class="answer" id="answer">
+      <div class="spin">
+        <button id="hUp" aria-label="часы больше">▲</button>
+        <div class="val" id="hVal">12</div>
+        <button id="hDn" aria-label="часы меньше">▼</button>
+        <div class="lbl">часы</div>
+      </div>
+      <div class="colon">:</div>
+      <div class="spin" id="mSpin">
+        <button id="mUp" aria-label="минуты больше">▲</button>
+        <div class="val" id="mVal">00</div>
+        <button id="mDn" aria-label="минуты меньше">▼</button>
+        <div class="lbl">минуты</div>
+      </div>
+    </div>
+    <button class="check" id="check">Проверить ✔</button>
+    <div id="feedback" class="feedback hidden" aria-live="polite"></div>
+    <button class="next hidden" id="next">Дальше →</button>
+    </div>
+    </div>
+  </section>
+
+  <!-- Итог -->
+  <section id="end" class="card result hidden">
+    <h2 id="endTitle"></h2>
+    <div class="stars" id="endStars"></div>
+    <p id="endText"></p>
+    <div class="row">
+      <button id="again">Ещё раз</button>
+      <button id="toMenu" style="background:#eee">Уровни</button>
+    </div>
+  </section>
+</main>
+
+<script>
+"use strict";
+
+const ROUNDS = 10;
+
+// step — шаг минут в ответе; mins — какие минуты может показывать часы
+const LEVELS = [
+  { id: 1, name: "Ровно час", desc: "Длинная стрелка смотрит на 12", step: 0,
+    minutes: [0], numbers: true,
+    tip: "Когда длинная стрелка показывает на <b>12</b> — на часах ровно столько часов, на сколько показывает короткая стрелка." },
+  { id: 2, name: "Половина", desc: "Ровно и половина часа", step: 30,
+    minutes: [0, 30], numbers: true,
+    tip: "Длинная стрелка на <b>12</b> — ровно. Длинная на <b>6</b> — <b>30 минут</b> (половина). Короткая стрелка при этом стоит <b>между</b> двумя цифрами." },
+  { id: 3, name: "Четверти", desc: "Ровно, 15, 30 и 45 минут", step: 15,
+    minutes: [0, 15, 30, 45], numbers: true,
+    tip: "Длинная на <b>3</b> — 15 минут, на <b>6</b> — 30, на <b>9</b> — 45. Короткая стрелка показывает час, который <b>уже прошёл</b> (ещё не дошла до следующей цифры)." },
+  { id: 4, name: "По пять минут", desc: "5, 10, 20, 25 … минут", step: 5,
+    minutes: [0,5,10,15,20,25,30,35,40,45,50,55], numbers: true,
+    tip: "Каждая цифра для длинной стрелки — это <b>5 минут</b>: 1 → 5, 2 → 10, 3 → 15, 4 → 20 … Считай пятёрками!" },
+  { id: 5, name: "Мастер", desc: "Любые минуты, без подсказок", step: 1,
+    minutes: null, numbers: false,
+    tip: "Сначала найди ближайшую цифру перед стрелкой и умножь на 5, потом добавь маленькие деления. Цифры минут на этих часах не подписаны!" },
+];
+
+const $ = id => document.getElementById(id);
+const pad = n => String(n).padStart(2, "0");
+const ns = "http://www.w3.org/2000/svg";
+
+let level, qIndex, score, current, guessH, guessM, answered, lastKey;
+
+/* ---------- меню ---------- */
+LEVELS.forEach(l => {
+  const b = document.createElement("button");
+  b.className = "level";
+  b.innerHTML = `<span class="n">${l.id}</span><span>${l.name}<small>${l.desc}</small></span>`;
+  b.onclick = () => start(l);
+  $("levels").appendChild(b);
+});
+$("back").onclick = $("toMenu").onclick = showMenu;
+$("again").onclick = () => start(level);
+
+function show(id) {
+  ["menu", "game", "end"].forEach(s => $(s).classList.toggle("hidden", s !== id));
+}
+function showMenu() { show("menu"); }
+
+/* ---------- игра ---------- */
+function start(l) {
+  level = l; qIndex = 0; score = 0; lastKey = null;
+  $("levelName").textContent = `Уровень ${l.id}`;
+  $("levelTip").innerHTML = "💡 " + l.tip;
+  $("mSpin").classList.toggle("hidden", l.step === 0);
+  document.querySelector(".colon").classList.toggle("hidden", l.step === 0);
+  show("game");
+  nextQuestion();
+}
+
+function randomTime() {
+  let h, m, key;
+  do {
+    h = 1 + Math.floor(Math.random() * 12);
+    m = level.minutes ? level.minutes[Math.floor(Math.random() * level.minutes.length)]
+                      : Math.floor(Math.random() * 60);
+    key = h + ":" + m;
+  } while (key === lastKey);
+  lastKey = key;
+  return { h, m };
+}
+
+function nextQuestion() {
+  if (qIndex >= ROUNDS) return finish();
+  current = randomTime();
+  guessH = 12; guessM = 0; answered = false;
+  drawClock(current.h, current.m);
+  updateAnswer();
+  $("feedback").classList.add("hidden");
+  $("next").classList.add("hidden");
+  $("check").classList.remove("hidden");
+  setSpinEnabled(true);
+  $("bar").style.width = (qIndex / ROUNDS * 100) + "%";
+  $("score").textContent = "⭐ " + score;
+}
+
+function setSpinEnabled(on) {
+  ["hUp", "hDn", "mUp", "mDn"].forEach(id => $(id).disabled = !on);
+}
+
+function updateAnswer() {
+  $("hVal").textContent = guessH;
+  $("mVal").textContent = pad(guessM);
+}
+
+const stepM = () => Math.max(level.step, 1);
+$("hUp").onclick = () => { guessH = guessH % 12 + 1; updateAnswer(); };
+$("hDn").onclick = () => { guessH = (guessH + 10) % 12 + 1; updateAnswer(); };
+$("mUp").onclick = () => { guessM = (guessM + stepM()) % 60; updateAnswer(); };
+$("mDn").onclick = () => { guessM = (guessM - stepM() + 60) % 60; updateAnswer(); };
+
+$("check").onclick = () => {
+  if (answered) return;
+  answered = true;
+  const gm = level.step === 0 ? 0 : guessM;
+  const ok = guessH === current.h && gm === current.m;
+  if (ok) score++;
+  $("score").textContent = "⭐ " + score;
+  showFeedback(ok, guessH, gm);
+  setSpinEnabled(false);
+  $("check").classList.add("hidden");
+  $("next").classList.remove("hidden");
+  $("next").textContent = qIndex === ROUNDS - 1 ? "Результат 🏁" : "Дальше →";
+  qIndex++;
+  $("bar").style.width = (qIndex / ROUNDS * 100) + "%";
+};
+$("next").onclick = nextQuestion;
+
+/* ---------- клавиатура (компьютер) ---------- */
+document.addEventListener("keydown", e => {
+  if ($("game").classList.contains("hidden")) return;
+  if (e.key === "Enter") {
+    const b = answered ? $("next") : $("check");
+    if (document.activeElement && document.activeElement.tagName === "BUTTON" && document.activeElement !== b) return;
+    e.preventDefault(); b.click();
+  } else if (!answered) {
+    const map = { ArrowUp: "hUp", ArrowDown: "hDn", ArrowRight: "mUp", ArrowLeft: "mDn" };
+    if (map[e.key]) { e.preventDefault(); $(map[e.key]).click(); }
+  }
+});
+
+/* ---------- слова ---------- */
+function hoursWord(h) { return h === 1 ? "час" : (h >= 2 && h <= 4) ? "часа" : "часов"; }
+function minWord(m) {
+  const t = m % 10, hh = m % 100;
+  if (hh >= 11 && hh <= 14) return "минут";
+  return t === 1 ? "минута" : (t >= 2 && t <= 4) ? "минуты" : "минут";
+}
+function timeText(h, m) {
+  return m === 0 ? `${h} ${hoursWord(h)} ровно (${h}:00)`
+                 : `${h} ${hoursWord(h)} ${m} ${minWord(m)} (${h}:${pad(m)})`;
+}
+const nextHour = h => h % 12 + 1;
+const prevHour = h => (h + 10) % 12 + 1;
+
+/* ---------- объяснения ---------- */
+function explainCorrect(h, m) {
+  const parts = [];
+  if (m === 0) {
+    parts.push(`Длинная <b>синяя</b> стрелка смотрит на <b>12</b> — значит минут нет, время ровное.`);
+    parts.push(`Короткая <b>красная</b> стрелка показывает на <b>${h}</b> — значит ${h} ${hoursWord(h)}.`);
+  } else {
+    const near = Math.floor(m / 5), rest = m % 5;
+    if (rest === 0) {
+      parts.push(`Длинная <b>синяя</b> стрелка смотрит на цифру <b>${near}</b>. Каждая цифра — это 5 минут: ${near} × 5 = <b>${m}</b> ${minWord(m)}.`);
+    } else {
+      parts.push(`Длинная <b>синяя</b> стрелка прошла цифру <b>${near === 0 ? 12 : near}</b> (это ${near * 5} ${minWord(near * 5)}) и ещё ${rest} ${minWord(rest)}-делени${rest === 1 ? "е" : "я"} — всего <b>${m}</b> ${minWord(m)}.`);
+    }
+    if (m < 30) {
+      parts.push(`Короткая <b>красная</b> стрелка уже прошла цифру <b>${h}</b>, но до <b>${nextHour(h)}</b> ещё не дошла. Берём цифру, которую она <b>прошла</b>: ${h} ${hoursWord(h)}.`);
+    } else if (m === 30) {
+      parts.push(`Короткая <b>красная</b> стрелка стоит ровно посередине между <b>${h}</b> и <b>${nextHour(h)}</b>. Берём меньшую цифру, которую она прошла: ${h} ${hoursWord(h)}.`);
+    } else {
+      parts.push(`Короткая <b>красная</b> стрелка почти дошла до <b>${nextHour(h)}</b>, но ещё не дошла. Значит, час всё ещё <b>${h}</b>. (Близко к ${nextHour(h)} — потому что скоро наступит следующий час.)`);
+    }
+  }
+  return parts;
+}
+
+function explainMistake(h, m, gh, gm) {
+  const out = [];
+  const hourOk = gh === h, minOk = gm === m;
+
+  // стрелки перепутаны
+  if (!hourOk && !minOk && level.step !== 0 && gh === (m / 5 | 0 || 12) && gm === (h % 12) * 5) {
+    out.push(`😕 Похоже, ты перепутал(а) стрелки. <b>Короткая</b> красная — это часы, а <b>длинная</b> синяя — минуты.`);
+  } else {
+    if (!hourOk) {
+      if (m >= 30 && gh === nextHour(h)) {
+        out.push(`😕 <b>Часы:</b> ты назвал(а) ${gh}, но красная стрелка ещё <b>не дошла</b> до ${gh}. Минут уже больше половины, поэтому она стоит близко к ${gh}, но час ещё ${h}. Правило: смотри цифру, которую короткая стрелка <b>уже прошла</b>.`);
+      } else if (m < 30 && m !== 0 && gh === prevHour(h)) {
+        out.push(`😕 <b>Часы:</b> ты назвал(а) ${gh}, но красная стрелка уже <b>прошла</b> цифру ${h} и идёт к ${nextHour(h)}. Час — это цифра, которую она прошла, то есть ${h}.`);
+      } else if (m === 0 && gh !== h) {
+        out.push(`😕 <b>Часы:</b> когда длинная стрелка на 12, короткая точно показывает на нужный час. Она показывает на <b>${h}</b>, а не на ${gh}.`);
+      } else {
+        out.push(`😕 <b>Часы:</b> короткая красная стрелка находится у цифры <b>${h}</b>, а ты выбрал(а) ${gh}. Проверь, что смотришь на <b>короткую</b> стрелку.`);
+      }
+    }
+    if (!minOk && level.step !== 0) {
+      const asNumber = Math.floor(m / 5);
+      if (m % 5 === 0 && gm === asNumber) {
+        out.push(`😕 <b>Минуты:</b> ты прочитал(а) цифру на часах (${asNumber}) как минуты. Но каждая цифра — это <b>5 минут</b>! ${asNumber} × 5 = <b>${m}</b>.`);
+      } else if (gm % 5 === 0 && m % 5 === 0 && Math.abs(gm - m) === 5) {
+        out.push(`😕 <b>Минуты:</b> ты ошибся(лась) на одну цифру. Длинная стрелка смотрит на <b>${m / 5 || 12}</b>, значит ${m / 5 || 12} × 5 = <b>${m}</b> ${minWord(m)}, а не ${gm}.`);
+      } else if (gm === (m + 30) % 60) {
+        out.push(`😕 <b>Минуты:</b> ты посмотрел(а) на противоположную сторону циферблата. Длинная стрелка показывает ${m} ${minWord(m)}, а не ${gm}. Начинай считать от <b>12</b> по часовой стрелке.`);
+      } else if (level.step === 1 && Math.abs(gm - m) <= 3) {
+        out.push(`😕 <b>Минуты:</b> почти! Ты ошибся(лась) на ${Math.abs(gm - m)}. Найди ближайшую цифру перед стрелкой, умножь на 5, потом посчитай маленькие деления.`);
+      } else {
+        out.push(`😕 <b>Минуты:</b> длинная стрелка показывает <b>${m}</b> ${minWord(m)}, а не ${gm}. Помни: цифра × 5 = минуты.`);
+      }
+    }
+  }
+  return out;
+}
+
+function showFeedback(ok, gh, gm) {
+  const f = $("feedback");
+  f.className = "feedback " + (ok ? "ok" : "bad");
+  let html;
+  if (ok) {
+    html = `<h3>🎉 Правильно!</h3><div>${timeText(current.h, current.m)}</div>`;
+    html += `<details style="margin-top:6px"><summary>Почему так?</summary><ul>` +
+      explainCorrect(current.h, current.m).map(s => `<li>${s}</li>`).join("") + `</ul></details>`;
+  } else {
+    html = `<h3>Не совсем 🙂</h3>`;
+    html += `<div>Ты ответил(а): <b>${level.step === 0 ? gh + ":00" : gh + ":" + pad(gm)}</b>.
+             Правильно: <b>${timeText(current.h, current.m)}</b>.</div>`;
+    html += `<ul>` + explainMistake(current.h, current.m, gh, gm).map(s => `<li>${s}</li>`).join("") + `</ul>`;
+    html += `<div style="margin-top:8px"><b>Как правильно:</b></div><ul>` +
+      explainCorrect(current.h, current.m).map(s => `<li>${s}</li>`).join("") + `</ul>`;
+  }
+  f.innerHTML = html;
+}
+
+/* ---------- итог ---------- */
+function finish() {
+  const stars = score >= 9 ? 3 : score >= 7 ? 2 : score >= 4 ? 1 : 0;
+  $("endTitle").textContent = stars === 3 ? "Отлично! 🏆" : stars >= 1 ? "Хорошо! 👍" : "Давай потренируемся ещё 💪";
+  $("endStars").textContent = "★".repeat(stars) + "☆".repeat(3 - stars);
+  const next = LEVELS[level.id] ;
+  $("endText").textContent = `Верно: ${score} из ${ROUNDS}.` +
+    (stars >= 2 && next ? ` Попробуй следующий уровень: «${next.name}»!` : stars < 2 ? " Прочитай подсказку и попробуй ещё раз." : "");
+  show("end");
+}
+
+/* ---------- рисование часов ---------- */
+function el(name, attrs, parent) {
+  const e = document.createElementNS(ns, name);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(e);
+  return e;
+}
+
+function drawClock(h, m) {
+  const svg = $("clock");
+  svg.innerHTML = "";
+  el("circle", { cx: 100, cy: 100, r: 96, fill: "#fffdf5", stroke: "#2b2d42", "stroke-width": 5 }, svg);
+  for (let i = 0; i < 60; i++) {
+    const a = i * 6 * Math.PI / 180, big = i % 5 === 0;
+    const r1 = big ? 82 : 87, r2 = 91;
+    el("line", { x1: 100 + r1 * Math.sin(a), y1: 100 - r1 * Math.cos(a),
+                 x2: 100 + r2 * Math.sin(a), y2: 100 - r2 * Math.cos(a),
+                 stroke: "#2b2d42", "stroke-width": big ? 2.5 : 1 }, svg);
+  }
+  for (let n = 1; n <= 12; n++) {
+    const a = n * 30 * Math.PI / 180;
+    const t = el("text", { x: 100 + 68 * Math.sin(a), y: 100 - 68 * Math.cos(a) + 7,
+                           "text-anchor": "middle", "font-size": 20, "font-weight": "bold",
+                           fill: "#2b2d42" }, svg);
+    t.textContent = n;
+    if (level.numbers) { // подпись минут снаружи не помещается — рисуем мелко внутри кольца
+      const tm = el("text", { x: 100 + 52 * Math.sin(a), y: 100 - 52 * Math.cos(a) + 3.5,
+                              "text-anchor": "middle", "font-size": 9, fill: "#1d6fd1" }, svg);
+      tm.textContent = n * 5;
+    }
+  }
+  const hourAngle = ((h % 12) + m / 60) * 30;
+  const minAngle = m * 6;
+  hand(svg, hourAngle, 46, 8, "#e63946");
+  hand(svg, minAngle, 76, 5, "#1d6fd1");
+  el("circle", { cx: 100, cy: 100, r: 6, fill: "#2b2d42" }, svg);
+}
+
+function hand(svg, deg, len, width, color) {
+  const a = deg * Math.PI / 180;
+  el("line", { x1: 100 - 10 * Math.sin(a), y1: 100 + 10 * Math.cos(a),
+               x2: 100 + len * Math.sin(a), y2: 100 - len * Math.cos(a),
+               stroke: color, "stroke-width": width, "stroke-linecap": "round" }, svg);
+}
+</script>
+</body>
+</html>
