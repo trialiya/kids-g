@@ -2,6 +2,7 @@
 import { $, el } from "./dom.js";
 import { state } from "./state.js";
 import { drawAnimal } from "./animals.js";
+import catFace from "../assets/cat-face.jpg";
 
 export function drawClock(h, m) {
   drawClockInto($("clock"), h, m, state.level.numbers && state.training); // в основном режиме цифры минут — это подсказка, их нет
@@ -16,6 +17,17 @@ export function drawClockInto(svg, h, m, minuteNumbers, animals = true) {
   if (animals) CORNERS.forEach(([a, x, y], i) =>
     drawAnimal(svg, a, x, y, .62, "animal corner c" + i));
   el("circle", { cx: 100, cy: 100, r: 96, fill: "#fffdf5", stroke: "#2b2d42", "stroke-width": 5 }, svg);
+  if (animals) { // морда нашего кота в середине циферблата, высветленная, чтобы цифры читались
+    const clip = el("clipPath", { id: "dialClip" }, el("defs", {}, svg));
+    el("circle", { cx: 100, cy: 100, r: 93.5 }, clip);
+    el("image", { href: catFace, x: 6, y: 6, width: 188, height: 188, "clip-path": "url(#dialClip)",
+                  preserveAspectRatio: "xMidYMid slice" }, svg);
+    el("circle", { cx: 100, cy: 100, r: 94, fill: "url(#dialFade)" }, svg);
+    const fade = el("radialGradient", { id: "dialFade" }, svg.querySelector("defs"));
+    el("stop", { offset: "40%", "stop-color": "#fffdf5", "stop-opacity": .25 }, fade);
+    el("stop", { offset: "60%", "stop-color": "#fffdf5", "stop-opacity": .7 }, fade);
+    el("stop", { offset: "100%", "stop-color": "#fffdf5", "stop-opacity": .85 }, fade);
+  }
   if (animals) RING.forEach((a, i) => {
     const ang = (i * 30 + 15) * Math.PI / 180;
     drawAnimal(svg, a, 100 + 75 * Math.sin(ang), 100 - 75 * Math.cos(ang), .27);
