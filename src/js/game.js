@@ -6,7 +6,7 @@ import { t, lv } from "./i18n/index.js";
 import { sfx } from "./audio.js";
 import { celebrate, confetti } from "./effects.js";
 import { canSpeak, speak, stopSpeak, toggleSpeak, isSpeakingFrom } from "./speech.js";
-import { drawClock, drawClockInto } from "./clock.js";
+import { drawClock, drawClockInto, showAnimals } from "./clock.js";
 import { explainCorrect, explainMistake, explainClockMistake, timeText, timeWords } from "./explain.js";
 import { show, showMenu } from "./ui.js";
 import { cat } from "./art.js";
@@ -292,6 +292,7 @@ function submit(gh, gm, assisted) {
   if (ok && !assisted) state.score++;
   $("score").textContent = "⭐ " + state.score;
   if (ok) celebrate(!assisted); else sfx.bad();
+  if (ok && !assisted && state.story) showAnimals($("clock")); // в истории зверушки — награда за ответ с первой попытки
   if (state.story) state.story.react(ok);
   showFeedback(ok, gh, gm, assisted);
   setSpinEnabled(false);

@@ -66,6 +66,22 @@ export function drawClockInto(svg, h, m, minuteNumbers, animals = true, cartoon 
   el("circle", { cx: 100, cy: 100, r: 6, fill: "#2b2d42" }, svg);
 }
 
+// Награда в истории за ответ с первой попытки: вокруг часов появляются зверушки, как в классике
+export function showAnimals(svg) {
+  if (svg.querySelector(".pop")) return;
+  const hands = svg.querySelector(".hand-h"); // зверушки под стрелками, крупные — по углам за циферблатом
+  CORNERS.forEach(([a, x, y], i) => {
+    const g = el("g", { class: "pop", style: `animation-delay:${i * .08}s` });
+    svg.insertBefore(g, svg.firstChild);
+    drawAnimal(g, a, x, y, .62, "animal corner c" + i);
+  });
+  RING.forEach((a, i) => {
+    const ang = (i * 30 + 15) * Math.PI / 180, g = el("g", { class: "pop", style: `animation-delay:${.3 + i * .05}s` });
+    svg.insertBefore(g, hands);
+    drawAnimal(g, a, 100 + 75 * Math.sin(ang), 100 - 75 * Math.cos(ang), .27);
+  });
+}
+
 function hand(svg, deg, len, width, color, cls) {
   const a = deg * Math.PI / 180;
   el("line", { x1: 100 - 10 * Math.sin(a), y1: 100 + 10 * Math.cos(a),
