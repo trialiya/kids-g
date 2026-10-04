@@ -5,11 +5,11 @@ import { state } from "./state.js";
 import { STORY_TEXTS } from "./i18n/story-texts.js";
 import { show } from "./ui.js";
 import { speak, stopSpeak, canSpeak } from "./speech.js";
-import { ART, cat } from "./art.js";
+import { ART, cat, nyu } from "./art.js";
 
 const s = () => STORY_TEXTS[state.lang];
 // Высота голоса героя: Барсик чуть выше обычного, Бобик и часы на башне — ниже, Зайка и Бабочка — тоненько
-const PITCH = { cat: 1.15, bunny: 1.5, dog: .75, butterfly: 1.7, rabbit: 1.3, townClock: .6 };
+const PITCH = { nyu: 1.4, cat: 1.15, bunny: 1.5, dog: .75, butterfly: 1.7, rabbit: 1.3, townClock: .6 };
 
 let lines = [], pos = 0, done = null, chId = null;
 
@@ -32,7 +32,7 @@ function nextLine(silent = false) {
   const left = who === "cat"; // Барсик пишет слева, друзья — справа, как в переписке
   const row = document.createElement("div");
   row.className = "msg " + (left ? "left" : "right");
-  row.innerHTML = `<span class="ava">${who === "cat" ? cat(54, mood || "") : ART[who](48)}</span>
+  row.innerHTML = `<span class="ava">${who === "cat" ? cat(54, mood || "") : who === "nyu" ? nyu(54, mood || "") : ART[who](48)}</span>
     <p class="bubble"><b>${s().names[who]}</b><span class="say"></span></p>`;
   row.querySelector(".say").textContent = text;
   $("chatLog").appendChild(row);

@@ -2,6 +2,7 @@
 .ch-day, body[data-ch="day"] { --ch: #F27D52; --chbg: #FFF1DE; }
 .ch-tea, body[data-ch="tea"] { --ch: #E8628D; --chbg: #E6F5EA; }
 .ch-shop, body[data-ch="shop"] { --ch: #D9951F; --chbg: #F6E7C8; }
+.ch-nyu, body[data-ch="nyu"] { --ch: #E8628D; --chbg: #FFEAF2; }
 
 .hero { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
 .hero > span, .scene > span { flex: none; line-height: 0; }

@@ -42,7 +42,7 @@ export function drawClockInto(svg, h, m, minuteNumbers, animals = true, cartoon 
   }
   if (cartoon) { // мордочка Барсика (90×90) в центре: цифры часов на радиусе 68 остаются снаружи
     const g = el("g", { transform: "translate(55 52)", opacity: .85, class: "dial-cat", "aria-hidden": "true" }, svg);
-    g.innerHTML = cat(90);
+    g.innerHTML = ((state.story && state.story.hero) || cat)(90); // в главе Ню — Ню
   }
   if (animals) RING.forEach((a, i) => {
     const ang = (i * 30 + 15) * Math.PI / 180;

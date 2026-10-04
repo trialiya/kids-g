@@ -12,13 +12,15 @@ import { start } from "./game.js";
 import { showComic } from "./comic.js";
 import { initAlbum, openAlbum, stickerHtml } from "./album.js";
 import { OUTFITS, setOutfit } from "./outfits.js";
-import { ART, cat, lock, fish, cup, gear } from "./art.js";
+import { ART, cat, nyu, lock, fish, cup, gear, bowIcon } from "./art.js";
+import { nyuMistake } from "./nyu-errors.js";
 
 const ROUNDS = 5; // в истории раунды короче, чем в классике
 const s = () => STORY_TEXTS[state.lang];
 const pick = arr => arr[Math.floor(Math.random() * arr.length)];
 const REWARD = { fish: (sz, on) => fish(sz, on ? "#F27D52" : "#eadfce"), cup: (sz, on) => cup(sz, on ? "#FF8FB1" : "#e3ece5"),
-                 gear: (sz, on) => gear(sz, on ? "#F2B33D" : "#e8dcc4") };
+                 gear: (sz, on) => gear(sz, on ? "#F2B33D" : "#e8dcc4"), bow: (sz, on) => bowIcon(sz, on ? "#FF8FB8" : "#eadde3") };
+const HERO = { cat, nyu }; // герои с настроением (радуется / грустит)
 
 // who — кто говорит в сцене, art — картинка остановки; level — уровень сложности из levels.js
 export const CHAPTERS = [
@@ -39,6 +41,13 @@ export const CHAPTERS = [
     { id: "fixDog", level: 4, art: "dog", who: "dog" },
     { id: "fixButterfly", level: 4, art: "butterfly", who: "butterfly" },
     { id: "fixTown", level: 5, art: "townClock", who: "townClock" },
+  ] },
+  // «Найди ошибку»: Ню всё делает быстро и ставит часы неправильно — ребёнок переставляет стрелки (fix)
+  { id: "nyu", art: "nyu", reward: "bow", type: "input", fix: true, stops: [
+    { id: "nyuMorning", level: 2, art: "bowl", who: "nyu" },
+    { id: "nyuGarden", level: 3, art: "butterfly", who: "nyu" },
+    { id: "nyuParty", level: 4, art: "cup", who: "nyu" },
+    { id: "nyuTrain", level: 5, art: "townClock", who: "nyu" },
   ] },
 ];
 
@@ -75,6 +84,7 @@ const isDone = st => (progress[st.id] || 0) >= PASS_STARS;
 const doneCount = ch => ch.stops.filter(isDone).length;
 const chapterOpen = i => i === 0 || doneCount(CHAPTERS[i - 1]) === CHAPTERS[i - 1].stops.length;
 const stopOpen = (ch, i) => i === 0 || isDone(ch.stops[i - 1]);
+const fmtTime = ({ h, m }) => `${h}:${String(m).padStart(2, "0")}`;
 const totalStars = () => Object.values(progress).reduce((a, n) => a + n, 0);
 const starsHtml = n => `<span class="stars-sm" aria-label="★ ${n}/3">${"★".repeat(n)}<i>${"★".repeat(3 - n)}</i></span>`;
 
@@ -110,7 +120,7 @@ function renderChapter(i) {
   $("chapter").className = `card ch-${ch.id}` + ($("chapter").classList.contains("hidden") ? " hidden" : "");
   $("chBack").textContent = s().backChapters;
   $("chTitle").textContent = txt.title;
-  $("chWho").innerHTML = cat(88);
+  $("chWho").innerHTML = (HERO[ch.art] || cat)(88); // в главе Ню рассказывает Ню
   $("chIntro").textContent = txt.intro;
   const box = $("stops");
   box.innerHTML = "";
@@ -140,12 +150,12 @@ function playStop(i, j) {
   // Реплика героя: показываем в облачке и, если звук включён, сразу читаем вслух (ребёнок может ещё не читать)
   const say = (text, mood) => {
     $("sceneSay").textContent = text;
-    $("sceneWho").innerHTML = st.who === "cat" ? cat(72, mood) : ART[st.who](64);
+    $("sceneWho").innerHTML = HERO[st.who] ? HERO[st.who](72, mood) : ART[st.who](64);
     if (canSpeak && state.soundOn) speak($("sceneSay"), $("sceneSpeak"));
   };
   // Сессия — одно прохождение остановки: фразы, время и реплики в ней не повторяются («Ещё раз» — новая сессия)
-  let used, seen, phrase = null;
-  const newSession = () => { used = { phrases: new Set(), times: new Set() }; seen = new Set(); };
+  let used, seen, phrase = null, mistake = null; // mistake — ошибка Ню в текущем вопросе
+  const newSession = () => { used = { phrases: new Set(), times: new Set(), errors: new Set() }; seen = new Set(); };
   newSession();
   // случайная реплика из списка, которой ещё не было в сессии; все уже были — список идёт по новому кругу
   const fresh = arr => {
@@ -157,16 +167,31 @@ function playStop(i, j) {
   state.story = {
     chapter: ch.id, rounds: ROUNDS, title: txt.title, clock: st.id, // clock — оформление часов (clock-themes.js)
     // время вопроса: из интервала случайной фразы остановки; в мастерской фраз нет — время любое (null → как в классике)
+    fix: !!ch.fix, hero: HERO[st.who] || cat,
     next() {
+      if (ch.fix) { // Ню: случайное время уровня (без повторов в сессии) и её ошибка
+        let h, m, key, tries = 0;
+        do {
+          h = 1 + Math.floor(Math.random() * 12);
+          m = level.minutes ? pick(level.minutes) : Math.floor(Math.random() * 60);
+          key = h + ":" + m;
+        } while (used.times.has(key) && ++tries < 50);
+        used.times.add(key);
+        mistake = nyuMistake(h, m, level.step, used.errors);
+        used.errors.add(mistake.error);
+        return { h, m, wrong: { h: mistake.h, m: mistake.m } };
+      }
       if (!PHRASES[st.id]) return null;
       const q = pickQuestion(st.id, level, used);
       phrase = q.phrase;
       return { h: q.h, m: q.m };
     },
     onStart: newSession,
-    ask: () => say(texts() ? texts().ask : fresh(s().stops[st.id].ask), ""),
+    ask: () => say(ch.fix ? fresh(s().nyuAsk)(fmtTime(state.current)) : texts() ? texts().ask : fresh(s().stops[st.id].ask), ""),
     askMinutes: h => say(fresh(s().minutesAsk)(h), ""),
-    react: ok => say(ok ? (texts() ? texts().win : fresh(s().stops[st.id].win)) : fresh(s().oops), ok ? "happy" : "sad"),
+    // в главе Ню после исправления она объясняет, что перепутала
+    react: ok => say(ok ? (ch.fix ? fresh(s().nyuOops[mistake.error]) : texts() ? texts().win : fresh(s().stops[st.id].win))
+                        : fresh(ch.fix ? s().nyuRetry : s().oops), ok ? "happy" : "sad"),
     finish(score, rounds) {
       const stars = score >= rounds ? 3 : score >= rounds - 1 ? 2 : score >= 2 ? 1 : 0;
       const before = progress[st.id] || 0, starsBefore = totalStars(), chapterBefore = ch.stops.every(isDone);
@@ -190,7 +215,7 @@ function playStop(i, j) {
         unlocks.push(`<div class="unlock">${cat(64, "happy", "", o.id)}<b>${s().newOutfit(s().outfits[o.id])}</b>
           <button class="wear-btn" data-wear="${o.id}" type="button">${s().wear}</button></div>`));
       return { stars, text: s().chapters[ch.id].reward(score, rounds),
-               art: `<span class="end-pic">${cat(96, mood)}</span><p class="bubble end-say">${pick(s().finale[band])}</p>` +
+               art: `<span class="end-pic">${(HERO[st.who] || cat)(96, mood)}</span><p class="bubble end-say">${pick(s().finale[band])}</p>` +
                     `<div class="rewards">${icons}</div>${lockNote}` + (unlocks.length ? `<div class="unlocks">${unlocks.join("")}</div>` : ""),
                next: nxt ? { label: s().nextStop(s().stops[nxt.id].title), go: () => playStop(i, j + 1) } : null };
     },
