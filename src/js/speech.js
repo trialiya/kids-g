@@ -8,16 +8,17 @@ let speaking = false;
 
 function speechText(box) {
   const c = box.cloneNode(true);
-  c.querySelectorAll(".speak").forEach(n => n.remove());
-  c.querySelectorAll("details").forEach(d => d.open = true);
-  c.querySelectorAll("summary").forEach(n => { if (n.id !== "hintSummary" && n.closest("details").id !== "hint") n.remove(); });
+  // читаем коротко: без кнопок, служебных пометок и свёрнутых блоков (кроме подсказки — её открывают перед чтением)
+  c.querySelectorAll(".speak, .nospeak, .hintnote").forEach(n => n.remove());
+  c.querySelectorAll("details").forEach(d => { if (!d.open && d.id !== "hint") d.remove(); });
+  c.querySelectorAll("summary").forEach(n => n.remove());
   c.querySelectorAll("h3, div, li").forEach(n => n.append(" . ")); // паузы между фразами
   // убираем эмодзи и «служебные» подписи, чтобы голос их не зачитывал
   return c.textContent
     .replace(/[\u{1F300}-\u{1FAFF}\u2600-\u27BF]/gu, "")
     .replace(/\(\d+:\d\d\)/g, "") // «(7:40)» дублирует слова
     .replace(/(\d+):(\d\d)/g, (m, h, mm) => t("speechTime", h, mm))
-    .replace(/×/g, t("speechTimes")).replace(/→/g, t("speechArrow"))
+    .replace(/×/g, t("speechTimes")).replace(/[→=]/g, t("speechArrow"))
     .replace(/\(а\)|\(ась\)/g, "")
     .replace(/\s+/g, " ").trim();
 }

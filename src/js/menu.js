@@ -14,7 +14,7 @@ function renderLevels() {
   LEVELS.forEach(l => {
     const b = document.createElement("div");
     b.className = "level-row";
-    const buttons = state.kind === "play"
+    const buttons = state.kind !== "clocks" // в «Обучении» и «Игре» можно отвечать и выбором, и стрелочками
       ? `<button class="mode" data-t="choice">${t("choose4")}</button><button class="mode" data-t="input">${t("typeIt")}</button>`
       : `<button class="mode" data-t="choice">${t("start")}</button>`;
     b.innerHTML = `<span class="n">${l.id}</span><span class="t">${lv(l).name}<small>${lv(l).desc}</small></span>${buttons}`;
@@ -33,6 +33,7 @@ export function applyLang() {
   const st = $("speakTip");
   st.dataset.label = t("speakTipLbl"); st.setAttribute("aria-label", t("speakTipLbl")); st.title = t("speakTipTitle");
   syncSound(); syncFs(); renderLevels();
+  document.dispatchEvent(new Event("langchange"));
 }
 
 export function initMenu() {
@@ -41,6 +42,7 @@ export function initMenu() {
     setLang(b.dataset.l);
     applyLang();
   });
+  document.addEventListener("classic:show", renderLevels);
   document.querySelectorAll("#modes button").forEach(b => b.onclick = () => {
     state.kind = b.dataset.k;
     try { localStorage.setItem("kind", state.kind); } catch (e) {}

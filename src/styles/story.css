@@ -1,0 +1,58 @@
+/* «История с Муркой»: главы, дорожка остановок, сцена с героем. Цвет главы — переменные --ch / --chbg */
+.ch-day, body[data-ch="day"] { --ch: #F27D52; --chbg: #FFF1DE; }
+.ch-tea, body[data-ch="tea"] { --ch: #E8628D; --chbg: #E6F5EA; }
+.ch-shop, body[data-ch="shop"] { --ch: #D9951F; --chbg: #F6E7C8; }
+
+.hero { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.hero > span, .scene > span { flex: none; line-height: 0; }
+.bubble { position: relative; margin: 0 0 0 8px; background: #fff; border: 3px solid var(--ink); border-radius: 18px;
+  padding: 10px 14px; font-weight: bold; line-height: 1.35; }
+.bubble::before { content: ""; position: absolute; left: -11px; top: 50%; margin-top: -8px;
+  border: 8px solid transparent; border-right-color: var(--ink); border-left: 0; }
+
+/* экран глав */
+.chapters { display: grid; gap: 12px; }
+.chapter-card, .stop { display: flex; align-items: center; gap: 12px; text-align: left; color: var(--ink); font-weight: normal;
+  border: 3px solid var(--ink); border-radius: 20px; box-shadow: 0 4px 0 var(--ink); }
+.chapter-card { width: 100%; background: var(--chbg); padding: 10px 12px; }
+.chapter-card .pic { width: 66px; height: 66px; border-radius: 18px; background: #fff; display: grid; place-items: center; flex: none; }
+.chapter-card .txt, .stop .txt { flex: 1; display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.chapter-card .txt small { color: var(--ch); font-size: .8rem; font-weight: bold; text-transform: uppercase; letter-spacing: .5px; }
+.chapter-card .txt b { font-size: 1.2rem; }
+.chapter-card .txt span { font-size: .9rem; color: var(--muted); }
+.chapter-card .state { flex: none; max-width: 92px; display: flex; flex-direction: column; align-items: center; gap: 2px;
+  text-align: center; font-size: .8rem; font-weight: bold; color: var(--muted); }
+.chapter-card.locked, .stop.locked { box-shadow: none; border-style: dashed; border-color: #b9ad9f; color: var(--muted); }
+.chapter-card.locked .pic, .stop.locked .pic { opacity: .55; }
+button.chapter-card:disabled, button.stop:disabled { opacity: 1; }
+
+.classic-btn { display: block; margin: 18px auto 0; background: transparent; border: 2px solid #d8cbb8; color: var(--muted);
+  font-size: .95rem; font-weight: bold; padding: 8px 16px; }
+.classic-btn.to-story { margin: 0 0 12px; border-color: var(--accent); color: var(--ink); background: #fff8e0; }
+
+/* экран главы: дорожка остановок зигзагом */
+#chapter { background: var(--chbg); }
+.chtop { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.chtop h2 { margin: 0; font-size: 1.5rem; }
+.chtop button { background: #fff; border: 2px solid var(--ink); padding: 6px 12px; font-size: .95rem; flex: none; }
+.stops { position: relative; display: flex; flex-direction: column; gap: 14px; padding-bottom: 6px; }
+.stops::before { content: ""; position: absolute; left: 50%; top: 24px; bottom: 24px; border-left: 5px dotted #d9bf9a; }
+.stop { position: relative; width: min(100%, 320px); background: #fff; padding: 6px 12px 6px 6px; }
+.stop:nth-child(odd) { align-self: flex-start; }
+.stop:nth-child(even) { align-self: flex-end; }
+.stop .pic { width: 58px; height: 58px; border-radius: 16px; background: var(--chbg); display: grid; place-items: center; flex: none; }
+.stop .txt b { font-size: 1.1rem; }
+.stop .txt small { color: var(--muted); font-size: .85rem; }
+.stars-sm { color: #E8A93A; font-size: 1.05rem; letter-spacing: 1px; white-space: nowrap; }
+.stars-sm i { color: #dccdb9; font-style: normal; }
+
+/* в игре: герой с репликой над часами, цвет главы в прогрессе */
+.scene { display: flex; align-items: center; gap: 10px; margin: 2px 0 8px; }
+.scene .bubble { font-size: 1.05rem; }
+body[data-ch]:not([data-ch=""]) .progress > div { background: var(--ch); }
+body[data-ch]:not([data-ch=""]) .stepask { background: var(--chbg); }
+.feedback .mood svg { display: block; }
+.end-art { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.end-art .rewards { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+.reset-btn { display: block; margin: 10px auto 0; background: transparent; border: 0; color: var(--muted);
+  font-size: .85rem; font-weight: normal; text-decoration: underline; min-height: 44px; }
