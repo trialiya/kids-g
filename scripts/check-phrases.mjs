@@ -1,12 +1,13 @@
 // Проверка фраз истории: node scripts/check-phrases.mjs
 // - у каждой фразы корректный интервал внутри своей части дня;
 // - на уровне остановки у фразы хватает вариантов времени (минимум 2);
-// - выбранное игрой время всегда лежит в интервале своей фразы;
+// - выбранное игрой время всегда лежит в интервале своей фразы, и в одной сессии фразы не повторяются;
 // - у каждой фразы есть тексты на ru и en.
 import { PHRASES, PART_OF_DAY, timesFor, pickQuestion } from "../src/js/phrases.js";
 import { LEVELS } from "../src/js/levels.js";
 import { STORY_TEXTS } from "../src/js/i18n/story-texts.js";
 
+const SESSION = 5; // вопросов на остановке истории (ROUNDS в story.js)
 const STOP_LEVEL = { breakfast: 1, walk: 1, play: 2, night: 2, teaBunny: 3, teaDog: 3, teaButterfly: 4, teaRabbit: 4 };
 const toMin = s => { const [h, m] = s.split(":").map(Number); return h * 60 + m; };
 const errors = [], rows = [];
@@ -35,18 +36,21 @@ for (const [stop, list] of Object.entries(PHRASES)) {
       times.slice(0, 6).map(t => `${t.h}:${String(t.m).padStart(2, "0")}`).join(" ") + (times.length > 6 ? " …" : "") +
       `   «${STORY_TEXTS.ru.phrases[p.id]?.ask}»`);
   }
-  // выбор игрой: 2000 раз, время всегда в интервале выбранной фразы, без повторов подряд
-  let last = {};
-  for (let i = 0; i < 2000; i++) {
-    const q = pickQuestion(stop, level, last), key = q.h + ":" + q.m;
-    if (!inInterval(q.phrase, level, q.h, q.m)) { errors.push(`${stop}: выбрано ${key} вне ${q.phrase.id} ${q.phrase.from}–${q.phrase.to}`); break; }
-    if (list.length > 1 && q.phrase.id === last.phraseId) { errors.push(`${stop}: фраза ${q.phrase.id} повторилась подряд`); break; }
-    last = { phraseId: q.phrase.id, key };
+  if (list.length < SESSION) errors.push(`${stop}: всего ${list.length} фраз, а вопросов в сессии ${SESSION}`);
+  // выбор игрой: 400 сессий по ${SESSION} вопросов — время всегда в интервале фразы, фразы в сессии не повторяются
+  for (let n = 0; n < 400; n++) {
+    const used = { phrases: new Set(), times: new Set() }, ids = [];
+    for (let i = 0; i < SESSION; i++) {
+      const q = pickQuestion(stop, level, used), key = q.h + ":" + q.m;
+      if (!inInterval(q.phrase, level, q.h, q.m)) { errors.push(`${stop}: выбрано ${key} вне ${q.phrase.id} ${q.phrase.from}–${q.phrase.to}`); break; }
+      ids.push(q.phrase.id);
+    }
+    if (new Set(ids).size !== ids.length) { errors.push(`${stop}: в сессии повторилась фраза: ${ids.join(", ")}`); break; }
   }
 }
 for (const lang of ["ru", "en"]) for (const id of Object.keys(STORY_TEXTS[lang].phrases))
   if (!Object.values(PHRASES).flat().some(p => p.id === id)) errors.push(`${lang}: текст ${id} без фразы`);
 
 console.log(rows.join("\n"));
-console.log(errors.length ? "\nОШИБКИ:\n" + errors.join("\n") : "\nВсё в порядке: интервалы корректны, время выбирается только внутри интервала фразы.");
+console.log(errors.length ? "\nОШИБКИ:\n" + errors.join("\n") : "\nВсё в порядке: интервалы корректны, время выбирается только внутри интервала фразы, в сессии без повторов.");
 process.exit(errors.length ? 1 : 0);

@@ -134,21 +134,30 @@ function playStop(i, j) {
     $("sceneWho").innerHTML = st.who === "cat" ? cat(72, mood) : ART[st.who](64);
     if (canSpeak && state.soundOn) speak($("sceneSay"), $("sceneSpeak"));
   };
-  let last = {}, phrase = null; // текущая фраза (своя для каждого вопроса) и прошлый вопрос — чтобы не повторяться
+  // Сессия — одно прохождение остановки: фразы, время и реплики в ней не повторяются («Ещё раз» — новая сессия)
+  let used, seen, phrase = null;
+  const newSession = () => { used = { phrases: new Set(), times: new Set() }; seen = new Set(); };
+  newSession();
+  // случайная реплика из списка, которой ещё не было в сессии; все уже были — список идёт по новому кругу
+  const fresh = arr => {
+    let pool = arr.filter((_, k) => !seen.has(arr[k]));
+    if (!pool.length) { arr.forEach(x => seen.delete(x)); pool = arr; }
+    const x = pick(pool); seen.add(x); return x;
+  };
   const texts = () => phrase ? s().phrases[phrase.id] : null;
   state.story = {
     chapter: ch.id, rounds: ROUNDS, title: txt.title,
     // время вопроса: из интервала случайной фразы остановки; в мастерской фраз нет — время любое (null → как в классике)
     next() {
       if (!PHRASES[st.id]) return null;
-      const q = pickQuestion(st.id, level, last);
+      const q = pickQuestion(st.id, level, used);
       phrase = q.phrase;
-      last = { phraseId: q.phrase.id, key: q.h + ":" + q.m };
       return { h: q.h, m: q.m };
     },
-    ask: () => say(texts() ? texts().ask : pick(s().stops[st.id].ask), ""),
-    askMinutes: h => say(s().minutesAsk(h), ""),
-    react: ok => say(ok ? (texts() ? texts().win : pick(s().stops[st.id].win)) : pick(s().oops), ok ? "happy" : "sad"),
+    onStart: newSession,
+    ask: () => say(texts() ? texts().ask : fresh(s().stops[st.id].ask), ""),
+    askMinutes: h => say(fresh(s().minutesAsk)(h), ""),
+    react: ok => say(ok ? (texts() ? texts().win : fresh(s().stops[st.id].win)) : fresh(s().oops), ok ? "happy" : "sad"),
     finish(score, rounds) {
       const stars = score >= rounds ? 3 : score >= rounds - 1 ? 2 : score >= 2 ? 1 : 0;
       progress[st.id] = Math.max(progress[st.id] || 0, stars);

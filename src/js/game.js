@@ -24,6 +24,7 @@ export function start(l, k, type, story = null) {
   state.mode = state.kind === "clocks" ? "clocks" : state.answerType;
   state.qIndex = 0; state.score = 0; state.lastKey = null;
   if (story) story.animals = []; // зверушки вокруг часов копятся заново на каждой попытке остановки
+  if (story && story.onStart) story.onStart(); // новая сессия истории: фразы снова без повторов
   $("levelName").textContent = story ? story.title : `${KINDS[state.kind].icon} ${t("lvShort", l.id)}`;
   $("tipText").innerHTML = "💡 " + lv(l).tip;
   $("levelTip").classList.toggle("hidden", !state.training);
