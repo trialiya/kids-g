@@ -6,7 +6,8 @@ import { LEVELS } from "./levels.js";
 import { lv } from "./i18n/index.js";
 import { STORY_TEXTS } from "./i18n/story-texts.js";
 import { show } from "./ui.js";
-import { stopSpeak } from "./speech.js";
+import { stopSpeak, speak, toggleSpeak, canSpeak } from "./speech.js";
+import { PHRASES, pickQuestion } from "./phrases.js";
 import { start } from "./game.js";
 import { ART, cat, lock, fish, cup, gear } from "./art.js";
 
@@ -76,6 +77,7 @@ export function renderStory() {
   $("resetStory").textContent = s().reset;
   $("resetStory").classList.toggle("hidden", !Object.keys(progress).length); // сбрасывать нечего — кнопку не показываем
   $("toStory").textContent = s().toStory;
+  $("sceneSpeak").setAttribute("aria-label", s().listen); $("sceneSpeak").dataset.label = s().listen;
   const box = $("chapters");
   box.innerHTML = "";
   CHAPTERS.forEach((ch, i) => {
@@ -124,15 +126,28 @@ function openChapter(i) {
 
 /* ---------- игра на остановке ---------- */
 function playStop(i, j) {
-  const ch = CHAPTERS[i], st = ch.stops[j], txt = s().stops[st.id];
+  const ch = CHAPTERS[i], st = ch.stops[j], txt = s().stops[st.id], level = LEVELS[st.level - 1];
+  // Реплика героя: показываем в облачке и, если звук включён, сразу читаем вслух (ребёнок может ещё не читать)
   const say = (text, mood) => {
     $("sceneSay").textContent = text;
     $("sceneWho").innerHTML = st.who === "cat" ? cat(72, mood) : ART[st.who](64);
+    if (canSpeak && state.soundOn) speak($("sceneSay"), $("sceneSpeak"));
   };
+  let last = {}, phrase = null; // текущая фраза (своя для каждого вопроса) и прошлый вопрос — чтобы не повторяться
+  const texts = () => phrase ? s().phrases[phrase.id] : null;
   state.story = {
     chapter: ch.id, rounds: ROUNDS, title: txt.title,
-    ask: () => say(pick(s().stops[st.id].ask), ""),
-    react: ok => say(ok ? pick(s().stops[st.id].win) : pick(s().oops), ok ? "happy" : "sad"),
+    // время вопроса: из интервала случайной фразы остановки; в мастерской фраз нет — время любое (null → как в классике)
+    next() {
+      if (!PHRASES[st.id]) return null;
+      const q = pickQuestion(st.id, level, last);
+      phrase = q.phrase;
+      last = { phraseId: q.phrase.id, key: q.h + ":" + q.m };
+      return { h: q.h, m: q.m };
+    },
+    ask: () => say(texts() ? texts().ask : pick(s().stops[st.id].ask), ""),
+    askMinutes: h => say(s().minutesAsk(h), ""),
+    react: ok => say(ok ? (texts() ? texts().win : pick(s().stops[st.id].win)) : pick(s().oops), ok ? "happy" : "sad"),
     finish(score, rounds) {
       const stars = score >= rounds ? 3 : score >= rounds - 1 ? 2 : score >= 2 ? 1 : 0;
       progress[st.id] = Math.max(progress[st.id] || 0, stars);
@@ -145,7 +160,7 @@ function playStop(i, j) {
     back: () => { stopSpeak(); renderChapter(i); show("chapter"); },
     toMenuLabel: s().toChapter, backLabel: s().back,
   };
-  start(LEVELS[st.level - 1], "learn", ch.type, state.story);
+  start(level, "learn", ch.type, state.story);
 }
 
 /* ---------- переключение «История» / «Классика» ---------- */
@@ -164,6 +179,10 @@ export function initStory() {
   $("resetStory").onclick = resetProgress;
   $("toStory").onclick = () => setUi("story");
   $("chBack").onclick = () => { state.chapter = null; show("story"); };
+  if (canSpeak) {
+    $("sceneSpeak").classList.remove("hidden");
+    $("sceneSpeak").onclick = () => toggleSpeak($("sceneSay"), $("sceneSpeak"));
+  }
   document.addEventListener("langchange", renderStory);
   renderStory();
   show(state.ui === "classic" ? "menu" : "story");
