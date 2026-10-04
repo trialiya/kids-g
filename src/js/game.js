@@ -50,8 +50,8 @@ function nextQuestion() {
   if (state.qIndex >= ROUNDS) return finish();
   state.current = randomTime();
   state.guessH = 12; state.guessM = 0; state.answered = false; state.attempts = 0; state.revealed = false;
-  // в «Обучении» с выбором из 4 сначала спрашиваем только часы, потом минуты
-  state.step = state.training && state.mode === "choice" && state.level.step > 0 ? "h" : null;
+  // в «Обучении» сначала спрашиваем только часы, потом минуты (и в выборе из 4, и при вводе стрелочками)
+  state.step = state.training && state.mode !== "clocks" && state.level.step > 0 ? "h" : null;
   state.helped = false;
   if (state.mode === "clocks") {
     $("timeBig").textContent = state.level.step === 0 ? state.current.h + ":00" : fmt(state.current.h, state.current.m);
@@ -73,7 +73,7 @@ function setSpinEnabled(on) {
 
 function updateAnswer() {
   $("hVal").textContent = state.guessH;
-  $("mVal").textContent = pad(state.guessM);
+  $("mVal").textContent = state.step === "h" ? "··" : pad(state.guessM); // минуты ещё не спрашивали
 }
 
 const stepM = () => Math.max(state.level.step, 1);
@@ -82,7 +82,15 @@ $("hDn").onclick = () => { state.guessH = (state.guessH + 10) % 12 + 1; updateAn
 $("mUp").onclick = () => { state.guessM = (state.guessM + stepM()) % 60; updateAnswer(); };
 $("mDn").onclick = () => { state.guessM = (state.guessM - stepM() + 60) % 60; updateAnswer(); };
 
-$("check").onclick = () => submit(state.guessH, state.level.step === 0 ? 0 : state.guessM);
+$("check").onclick = () => {
+  if (state.answered) return;
+  if (!state.step) return submit(state.guessH, state.level.step === 0 ? 0 : state.guessM);
+  // обучение по шагам: сначала проверяем только часы, потом только минуты
+  const { h, m } = state.current;
+  if (state.step === "h") state.guessH === h ? toMinutes() : wrongStep(state.guessH, m);
+  else if (state.guessM === m) submit(h, m, state.attempts > 0 || state.revealed || state.helped);
+  else wrongStep(h, state.guessM);
+};
 
 
 function makeChoices() {
@@ -145,6 +153,32 @@ function showStep() {
   if (state.step) ask.innerHTML = state.step === "h" ? t("stepHour") : t("stepMin", state.current.h);
   $("clock").classList.toggle("focus-h", state.step === "h");
   $("clock").classList.toggle("focus-m", state.step === "m");
+  // ввод стрелочками: на шаге часов минуты заблокированы, на шаге минут час уже зафиксирован
+  const inp = state.mode === "input" && !state.answered;
+  $("mSpin").classList.toggle("locked", inp && state.step === "h");
+  $("hSpin").classList.toggle("done", inp && state.step === "m");
+  if (inp && state.step) {
+    $("hUp").disabled = $("hDn").disabled = state.step === "m";
+    $("mUp").disabled = $("mDn").disabled = state.step === "h";
+  }
+  updateAnswer();
+}
+
+// Час угадан — переходим к минутам
+function toMinutes() {
+  stopSpeak();
+  state.helped = state.attempts > 0 || state.revealed;
+  state.revealed = false;
+  state.step = "m";
+  sfx.ok();
+  $("feedback").classList.add("hidden");
+  makeChoices();
+}
+
+function wrongStep(gh, gm) {
+  state.attempts++;
+  sfx.bad();
+  showRetryFeedback(gh, gm);
 }
 
 // Четыре варианта: правильный + похожие ошибки (cand), при нехватке — случайные (rnd)
@@ -184,15 +218,7 @@ function choose(o, btn) {
   if (!state.training) { submit(o.h, o.m, false); return; } // основной режим: одна попытка
   if (o.h === state.current.h && o.m === state.current.m) {
     stopSpeak();
-    if (state.step === "h") { // часы угаданы — переходим к минутам
-      state.helped = state.attempts > 0 || state.revealed;
-      state.revealed = false;
-      state.step = "m";
-      sfx.ok();
-      $("feedback").classList.add("hidden");
-      makeChoices();
-      return;
-    }
+    if (state.step === "h") return toMinutes();
     submit(o.h, o.m, state.attempts > 0 || state.revealed || state.helped);
     return;
   }
@@ -238,6 +264,7 @@ function submit(gh, gm, assisted) {
   if (state.answered) return;
   state.answered = true;
   if (state.step) { state.step = null; showStep(); }
+  $("mSpin").classList.remove("locked"); $("hSpin").classList.remove("done");
   const ok = gh === state.current.h && gm === state.current.m;
   document.querySelectorAll("#choices button").forEach(b => {
     b.disabled = true;

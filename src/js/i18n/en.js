@@ -20,7 +20,7 @@ const en = {
       The <span style="color:var(--min)"><b>long blue</b></span> hand shows minutes.
       One big mark (number) for the long hand is <b>5 minutes</b>.`,
   mLearn: "🎓 Learn", mPlay: "🏆 Play", mClocks: "🕒 Find the clock", modesAria: "Game mode",
-  desc_learn: "You get all the hints. In “Choose from 4” you can try again until you find the right answer.",
+  desc_learn: "You get all the hints. First name the hour, then the minutes, and try again until you find the right answer.",
   desc_play: "No hints and only one try. Show what you’ve learned!",
   desc_clocks: "You get a time — find the clock whose hands show it. One try.",
   start: "▶ Start", choose4: "🔘 Choose from 4", typeIt: "⌨️ Type it",

@@ -49,3 +49,6 @@ svg.clock { width: 100%; max-width: 320px; display: block; margin: 0 auto; }
 .stepask .c-h { color: var(--hour); } .stepask .c-m { color: var(--min); }
 svg.clock .hand-h, svg.clock .hand-m { transition: opacity .3s; }
 svg.clock.focus-h .hand-m, svg.clock.focus-m .hand-h { opacity: .45; }
+.spin.locked { opacity: .35; }
+.spin.done .val { color: var(--ok); }
+.spin.done .val::after { content: " ✓"; font-size: 1.2rem; }
