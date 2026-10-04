@@ -165,8 +165,12 @@ function playStop(i, j) {
       renderStory();
       const icons = Array.from({ length: rounds }, (_, k) => REWARD[ch.reward](34, k < score)).join("");
       const nxt = ch.stops[j + 1]; // следующий раздел главы (он уже открыт: эта остановка только что пройдена)
+      // итоговая реплика Барсика — по числу верных ответов с первой попытки
+      const band = score >= rounds ? "all" : score >= rounds - 1 ? "almost" : score >= Math.ceil(rounds / 2) ? "half" : score > 0 ? "some" : "none";
+      const mood = score >= Math.ceil(rounds / 2) ? "happy" : score > 0 ? "" : "sad";
       return { stars, text: s().chapters[ch.id].reward(score, rounds),
-               art: `${cat(96, stars >= 1 ? "happy" : "sad")}<div class="rewards">${icons}</div>`,
+               art: `<span class="end-pic">${cat(96, mood)}</span><p class="bubble end-say">${pick(s().finale[band])}</p>` +
+                    `<div class="rewards">${icons}</div>`,
                next: nxt ? { label: s().nextStop(s().stops[nxt.id].title), go: () => playStop(i, j + 1) } : null };
     },
     back: () => { stopSpeak(); renderChapter(i); show("chapter"); },

@@ -30,6 +30,14 @@ const ru = {
       reward: (n, of) => `Часов запущено: ${n} из ${of}` },
   },
   // вопрос героя и радость после верного ответа; интервалы времени — в phrases.js
+  // итоговая реплика Барсика в конце остановки: all — все верно, almost — одна ошибка, half — больше половины, some — хоть что-то, none — ни одного
+  finale: {
+    all: ["Ура! Всё правильно! Ты настоящий знаток часов!", "Мур-р! Ни одной ошибки! Ты лучший помощник!", "Вот это да! Всё верно — я так рад!"],
+    almost: ["Отлично! Почти всё правильно!", "Здорово! Ещё чуть-чуть — и будет без ошибок!", "Мур! Ты очень мне помог!"],
+    half: ["Хорошо! Больше половины верно!", "Неплохо! Потренируемся ещё?", "Молодец, стараешься! Ещё разок — и будет лучше."],
+    some: ["Часы — это непросто. Попробуем ещё раз?", "Ничего страшного! Вместе у нас получится.", "Не грусти! Давай ещё потренируемся?"],
+    none: ["Ой, сегодня не вышло. Попробуем снова?", "Ничего! Посмотрим на стрелки ещё раз вместе?", "Мяу… Давай ещё раз, я в тебя верю!"],
+  },
   // вступления к главам: [кто, реплика, настроение Барсика]; времена совпадают с интервалами в phrases.js
   names: { cat: "Барсик", bunny: "Зайка", dog: "Бобик", butterfly: "Бабочка", rabbit: "Кролик Тёма", townClock: "Часы на башне" },
   comicTap: "Нажми, чтобы читать дальше",
@@ -174,6 +182,13 @@ const en = {
     shop: { title: "Barsik’s Workshop", skill: "Set the time with arrows",
       intro: "Oh no! All the clocks in town have stopped. My friends bring them to me. Will you help fix them?",
       reward: (n, of) => `Clocks running: ${n} of ${of}` },
+  },
+  finale: {
+    all: ["Hooray! All correct! You’re a real clock expert!", "Purr! Not a single mistake! You’re the best helper!", "Wow! All right — I’m so happy!"],
+    almost: ["Great! Almost all correct!", "Wonderful! Just a little more and it’ll be perfect!", "Purr! You helped me a lot!"],
+    half: ["Good! More than half correct!", "Not bad! Shall we practice more?", "Well done for trying! Once more and it’ll be better."],
+    some: ["Clocks are tricky. Shall we try again?", "That’s okay! Together we can do it.", "Don’t be sad! Let’s practice some more?"],
+    none: ["Oops, not today. Shall we try again?", "That’s okay! Let’s look at the hands together again?", "Meow… Let’s try again, I believe in you!"],
   },
   names: { cat: "Barsik", bunny: "Bunny", dog: "Bobik", butterfly: "Butterfly", rabbit: "Tyoma the Rabbit", townClock: "Tower clock" },
   comicTap: "Tap to read on",

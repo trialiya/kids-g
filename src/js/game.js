@@ -378,16 +378,18 @@ function finish() {
   // 90% и больше верных без подсказки (история: 5 из 5, классика: 9 из 10) — фото Барсика и «Молодец!»
   const great = state.score >= Math.ceil(state.rounds * 0.9);
   if (great) {
-    const rewards = $("endArt").querySelector(".rewards"); // в истории награды остаются под фото
-    $("endArt").innerHTML = `<figure class="cat-photo"><img src="${randomCatPhoto()}" alt="${t("catPhotoAlt")}">` +
-      `<figcaption>${t("wellDone")}</figcaption></figure>` + (rewards ? rewards.outerHTML : "");
+    const photo = `<figure class="cat-photo"><img src="${randomCatPhoto()}" alt="${t("catPhotoAlt")}">` +
+      `<figcaption>${t("wellDone")}</figcaption></figure>`;
+    const pic = $("endArt").querySelector(".end-pic"); // в истории фото встаёт вместо рисунка, реплика и награды остаются
+    if (pic) pic.outerHTML = photo; else $("endArt").innerHTML = photo;
   }
   $("endArt").classList.toggle("hidden", !state.story && !great);
   $("endTitle").textContent = t(stars === 3 ? "endGreat" : stars >= 1 ? "endGood" : "endMore");
   $("endStars").textContent = "★".repeat(stars) + "☆".repeat(3 - stars);
   show("end");
   if (stars >= 2) { sfx.win(); confetti(stars === 3 ? 40 : 24); }
-  if (great && canSpeak && state.soundOn) speak($("endArt").querySelector("figcaption"));
+  // вслух: в истории — «Молодец!» (если есть) и итоговая реплика Барсика, в классике — «Молодец!»
+  if (canSpeak && state.soundOn && (state.story || great)) speak(state.story ? $("endArt") : $("endArt").querySelector("figcaption"));
 }
 
 

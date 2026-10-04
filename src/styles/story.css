@@ -91,3 +91,7 @@ body[data-ch]:not([data-ch=""]) .stepask { background: var(--chbg); }
 .comic-skip:active, #comicBack:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
 #comicBack { border: 3px solid var(--ink); border-radius: 18px; box-shadow: 0 4px 0 var(--ink); }
 @media (prefers-reduced-motion: reduce) { .msg, .chat-tap, .comic-skip.start { animation: none; } }
+/* итоговая реплика Барсика под картинкой: хвостик облачка смотрит вверх */
+.end-pic { line-height: 0; }
+.end-say { margin: 4px 0 0; max-width: 320px; text-align: center; font-size: 1.1rem; }
+.end-say::before { left: 50%; top: -11px; margin: 0 0 0 -8px; border: 8px solid transparent; border-bottom-color: var(--ink); border-top: 0; }

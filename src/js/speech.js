@@ -12,7 +12,7 @@ function speechText(box) {
   c.querySelectorAll(".speak, .nospeak, .hintnote").forEach(n => n.remove());
   c.querySelectorAll("details").forEach(d => { if (!d.open && d.id !== "hint") d.remove(); });
   c.querySelectorAll("summary").forEach(n => n.remove());
-  c.querySelectorAll("h3, div, li").forEach(n => n.append(" . ")); // паузы между фразами
+  c.querySelectorAll("h3, div, li, figcaption").forEach(n => n.append(" . ")); // паузы между фразами
   // убираем эмодзи и «служебные» подписи, чтобы голос их не зачитывал
   return c.textContent
     .replace(/[\u{1F300}-\u{1FAFF}\u2600-\u27BF]/gu, "")
