@@ -6,9 +6,19 @@ export function drawClock(h, m) {
   drawClockInto($("clock"), h, m, state.level.numbers && state.training); // в основном режиме цифры минут — это подсказка, их нет
 }
 
-export function drawClockInto(svg, h, m, minuteNumbers) {
+// Зверушки между цифрами — чисто для красоты
+const ANIMALS = ["🐱", "🐰", "🐶", "🦋", "🐇", "🐱", "🐶", "🦋", "🐰", "🐇", "🐶", "🦋"];
+
+export function drawClockInto(svg, h, m, minuteNumbers, animals = true) {
   svg.innerHTML = "";
   el("circle", { cx: 100, cy: 100, r: 96, fill: "#fffdf5", stroke: "#2b2d42", "stroke-width": 5 }, svg);
+  if (animals) ANIMALS.forEach((a, i) => {
+    const ang = (i * 30 + 15) * Math.PI / 180;
+    const t = el("text", { x: 100 + 75 * Math.sin(ang), y: 100 - 75 * Math.cos(ang) + 3.5,
+                           "text-anchor": "middle", "font-size": 10, class: "animal",
+                           "aria-hidden": "true" }, svg);
+    t.textContent = a;
+  });
   for (let i = 0; i < 60; i++) {
     const a = i * 6 * Math.PI / 180, big = i % 5 === 0;
     const r1 = big ? 82 : 87, r2 = 91;
