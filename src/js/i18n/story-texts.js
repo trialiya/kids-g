@@ -15,7 +15,8 @@ const ru = {
   nextStop: title => `Дальше: ${title} →`,
   back: "← Назад",
   listen: "Послушать Барсика",
-  stopLocked: "Сначала пройди предыдущее",
+  stopLocked: "Откроется, когда на предыдущей будет 4 из 5",
+  needToPass: (n, of) => `Чтобы открыть дальше, нужно ${n} из ${of} правильно с первого раза.`,
   oops: ["Хм, кажется, не так…", "Ой! Давай посмотрим ещё раз.", "Почти! Попробуй ещё.", "Мяу? Что-то не сходится.",
     "Не совсем. Посмотри на стрелки!", "Ой-ой! Давай ещё разок.", "Хм… Проверим вместе?", "Чуть-чуть не так. Попробуем снова!"],
   chapters: {
@@ -169,7 +170,8 @@ const en = {
   nextStop: title => `Next: ${title} →`,
   back: "← Back",
   listen: "Listen to Barsik",
-  stopLocked: "Finish the previous one first",
+  stopLocked: "Opens when the previous one has 4 of 5",
+  needToPass: (n, of) => `To unlock the next one, get ${n} of ${of} right on the first try.`,
   oops: ["Hmm, that’s not it…", "Oops! Let’s look again.", "Almost! Try again.", "Meow? Something’s off.",
     "Not quite. Look at the hands!", "Oh-oh! One more time.", "Hmm… Shall we check together?", "A little off. Let’s try again!"],
   chapters: {

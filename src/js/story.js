@@ -64,7 +64,12 @@ function resetProgress() {
   renderStory();
 }
 
-const isDone = st => st.id in progress;
+// Остановка пройдена, если хоть раз было 4 из 5 верных с первой попытки (2 звезды и больше) —
+// только тогда открывается следующая. Сыгранная, но не пройденная остановка показывает свои звёзды.
+const PASS_STARS = 2;
+const PASS_SCORE = rounds => rounds - 1; // 4 из 5 — то же, что PASS_STARS
+const isPlayed = st => st.id in progress;
+const isDone = st => (progress[st.id] || 0) >= PASS_STARS;
 const doneCount = ch => ch.stops.filter(isDone).length;
 const chapterOpen = i => i === 0 || doneCount(CHAPTERS[i - 1]) === CHAPTERS[i - 1].stops.length;
 const stopOpen = (ch, i) => i === 0 || isDone(ch.stops[i - 1]);
@@ -112,7 +117,7 @@ function renderChapter(i) {
     b.disabled = !open;
     b.innerHTML = `<span class="pic">${ART[st.art](44)}</span>
       <span class="txt"><b>${s().stops[st.id].title}</b><small>${lv(level).name}</small></span>
-      ${open ? (isDone(st) ? starsHtml(progress[st.id]) : "") : lock(22)}`;
+      ${open ? (isPlayed(st) ? starsHtml(progress[st.id]) : "") : lock(22)}`;
     if (!open) b.title = s().stopLocked;
     b.onclick = () => playStop(i, j);
     box.appendChild(b);
@@ -164,13 +169,15 @@ function playStop(i, j) {
       save();
       renderStory();
       const icons = Array.from({ length: rounds }, (_, k) => REWARD[ch.reward](34, k < score)).join("");
-      const nxt = ch.stops[j + 1]; // следующий раздел главы (он уже открыт: эта остановка только что пройдена)
+      // следующий раздел главы — только если эта остановка пройдена (сейчас или раньше), иначе подсказка, сколько нужно
+      const nxt = isDone(st) ? ch.stops[j + 1] : null;
+      const lockNote = !isDone(st) && (ch.stops[j + 1] || CHAPTERS[i + 1]) ? `<p class="end-lock">${lock(18)} ${s().needToPass(PASS_SCORE(rounds), rounds)}</p>` : "";
       // итоговая реплика Барсика — по числу верных ответов с первой попытки
       const band = score >= rounds ? "all" : score >= rounds - 1 ? "almost" : score >= Math.ceil(rounds / 2) ? "half" : score > 0 ? "some" : "none";
       const mood = score >= Math.ceil(rounds / 2) ? "happy" : score > 0 ? "" : "sad";
       return { stars, text: s().chapters[ch.id].reward(score, rounds),
                art: `<span class="end-pic">${cat(96, mood)}</span><p class="bubble end-say">${pick(s().finale[band])}</p>` +
-                    `<div class="rewards">${icons}</div>`,
+                    `<div class="rewards">${icons}</div>${lockNote}`,
                next: nxt ? { label: s().nextStop(s().stops[nxt.id].title), go: () => playStop(i, j + 1) } : null };
     },
     back: () => { stopSpeak(); renderChapter(i); show("chapter"); },
