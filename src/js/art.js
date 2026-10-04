@@ -1,10 +1,10 @@
-// Рисунки для сюжетного режима: Мурка (по фото нашего кота), её друзья и мелкие иконки.
+// Рисунки для сюжетного режима: Барсик (по фото нашего кота), его друзья и мелкие иконки.
 // Все функции возвращают строку <svg>…</svg>, размер задаётся первым аргументом.
 const INK = "#3A2E39";
 const svg = (size, vb, body, label) =>
   `<svg width="${size}" height="${size}" viewBox="${vb}" ${label ? `role="img" aria-label="${label}"` : 'aria-hidden="true"'}>${body}</svg>`;
 
-// Мурка: серая полосатая, белая мордочка, янтарные глаза. mood: "" | "happy" | "sad"
+// Барсик: серый полосатый, белая мордочка, янтарные глаза. mood: "" | "happy" | "sad"
 export function cat(size = 96, mood = "", label = "") {
   const eyes = mood === "happy"
     ? `<path d="M32 64 q9 -11 18 0 M70 64 q9 -11 18 0" fill="none" stroke="${INK}" stroke-width="4" stroke-linecap="round"/>`

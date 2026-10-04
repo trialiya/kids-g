@@ -6,7 +6,7 @@ import catFace from "../assets/cat-face.jpg";
 import { cat } from "./art.js";
 
 export function drawClock(h, m) {
-  // в основном режиме цифры минут — это подсказка, их нет; в истории — рисованная Мурка в центре, без зверушек и фото
+  // в основном режиме цифры минут — это подсказка, их нет; в истории — рисованный Барсик в центре, без зверушек и фото
   drawClockInto($("clock"), h, m, state.level.numbers && state.training, !state.story, !!state.story);
 }
 
@@ -14,7 +14,7 @@ export function drawClock(h, m) {
 const RING = ["cat", "bunny", "dog", "butterfly", "rabbit", "cat", "dog", "butterfly", "bunny", "rabbit", "dog", "butterfly"];
 const CORNERS = [["cat", 19, 19], ["bunny", 181, 21], ["dog", 19, 181], ["butterfly", 181, 181]];
 
-// animals — украшения классики (зверушки и фото кота); cartoon — рисованная Мурка как в макетах (история)
+// animals — украшения классики (зверушки и фото кота); cartoon — рисованный Барсик как в макетах (история)
 export function drawClockInto(svg, h, m, minuteNumbers, animals = true, cartoon = false) {
   svg.innerHTML = "";
   if (animals) CORNERS.forEach(([a, x, y], i) =>
@@ -31,7 +31,7 @@ export function drawClockInto(svg, h, m, minuteNumbers, animals = true, cartoon 
     el("stop", { offset: "60%", "stop-color": "#fffdf5", "stop-opacity": .7 }, fade);
     el("stop", { offset: "100%", "stop-color": "#fffdf5", "stop-opacity": .85 }, fade);
   }
-  if (cartoon) { // мордочка Мурки (90×90) в центре: цифры часов на радиусе 68 остаются снаружи
+  if (cartoon) { // мордочка Барсика (90×90) в центре: цифры часов на радиусе 68 остаются снаружи
     const g = el("g", { transform: "translate(55 52)", opacity: .85, class: "dial-cat", "aria-hidden": "true" }, svg);
     g.innerHTML = cat(90);
   }
