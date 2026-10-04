@@ -41,12 +41,14 @@ function nextLine(silent = false) {
     <p class="bubble"><b>${s().names[who]}</b><span class="say"></span></p>`;
   row.querySelector(".say").textContent = text;
   $("chatLog").appendChild(row);
-  row.scrollIntoView({ block: "nearest", behavior: "smooth" });
   if (!silent && canSpeak && state.soundOn) speak(row.querySelector(".say"), null, PITCH[who] || 1);
   const last = pos >= lines.length;
   $("chatTap").textContent = last ? "" : s().comicTap;
   $("comicSkip").textContent = last ? (kind === "endings" ? s().comicEnd : s().comicStart) : s().comicSkip;
   $("comicSkip").classList.toggle("start", last);
+  // переписка растёт вниз: прокручиваем за ней, чтобы новая реплика и кнопка под ней были на экране
+  if (!silent) requestAnimationFrame(() => $("comicSkip").scrollIntoView({ block: "end",
+    behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" }));
 }
 
 function finish() { stopSpeak(); if (done) done(); }
