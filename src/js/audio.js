@@ -33,6 +33,7 @@ export const sfx = {
 export function syncSound() {
   $("sfxGame").textContent = state.soundOn ? "🔔" : "🔕";
   $("sfxMenu").textContent = t(state.soundOn ? "soundOn" : "soundOff");
+  $("sfxMenu").dataset.icon = state.soundOn ? "🔔" : "🔕"; // в компактной строке сверху — только значок
   $("sfxGame").setAttribute("aria-label", t(state.soundOn ? "soundOffAria" : "soundOnAria"));
 }
 function toggleSound() {
