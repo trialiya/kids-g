@@ -1,6 +1,6 @@
 // Сюжетный режим «История с Барсиком»: три главы по возрастанию сложности.
 // Игровая логика общая с классикой (game.js), здесь — главы, остановки, прогресс и реплики героев.
-import { $ } from "./dom.js";
+import { $, fmt } from "./dom.js";
 import { state } from "./state.js";
 import { LEVELS } from "./levels.js";
 import { lv } from "./i18n/index.js";
@@ -11,7 +11,7 @@ import { PHRASES, pickQuestion } from "./phrases.js";
 import { start } from "./game.js";
 import { showComic } from "./comic.js";
 import { initAlbum, openAlbum, stickerHtml } from "./album.js";
-import { OUTFITS, setOutfit } from "./outfits.js";
+import { OUTFITS, setOutfit, getOutfit } from "./outfits.js";
 import { ART, cat, nyu, lock, fish, cup, gear } from "./art.js";
 import { nyuMistake } from "./nyu-errors.js";
 
@@ -69,6 +69,7 @@ function resetProgress() {
   if (!confirm(s().resetAsk)) return;
   progress = {};
   try { localStorage.removeItem("storyProgress"); } catch (e) {}
+  if (getOutfit()) setOutfit(""); // звёзд больше нет — наряды снова закрыты
   state.chapter = null;
   renderStory();
 }
@@ -80,9 +81,10 @@ const PASS_SCORE = rounds => rounds - 1; // 4 из 5 — то же, что PASS_
 const isPlayed = st => st.id in progress;
 const isDone = st => (progress[st.id] || 0) >= PASS_STARS;
 const doneCount = ch => ch.stops.filter(isDone).length;
-const chapterOpen = i => i === 0 || doneCount(CHAPTERS[i - 1]) === CHAPTERS[i - 1].stops.length;
+// следующая глава открывается, когда пройдены основные остановки предыдущей; «Ошибки Ню» — финал главы перед концовкой
+// (так же у тех, кто прошёл главы, когда остановки Ню ещё не было)
+const chapterOpen = i => i === 0 || CHAPTERS[i - 1].stops.every(st => st.nyu || isDone(st));
 const stopOpen = (ch, i) => i === 0 || isDone(ch.stops[i - 1]);
-const fmtTime = ({ h, m }) => `${h}:${String(m).padStart(2, "0")}`;
 const totalStars = () => Object.values(progress).reduce((a, n) => a + n, 0);
 const starsHtml = n => `<span class="stars-sm" aria-label="★ ${n}/3">${"★".repeat(n)}<i>${"★".repeat(3 - n)}</i></span>`;
 
@@ -175,7 +177,8 @@ function playStop(i, j) {
   state.story = {
     chapter: ch.id, rounds: ROUNDS, title: txt.title, clock: st.id, // clock — оформление часов (clock-themes.js)
     // время вопроса: из интервала случайной фразы остановки; в мастерской фраз нет — время любое (null → как в классике)
-    nyu: !!st.nyu, nyuTag: s().names.nyu, hero: HERO[st.who] || cat,
+    nyu: !!st.nyu, get nyuTag() { return s().names.nyu; }, hero: HERO[st.who] || cat, // метка — на текущем языке
+    nudge: () => say(s().nyuNudge, ""), // «Проверить», не тронув ответ Ню
     next() {
       if (!PHRASES[st.id]) return null;
       const q = pickQuestion(st.id, level, used);
@@ -187,7 +190,7 @@ function playStop(i, j) {
     },
     onStart: newSession,
     // Ню: «Мне нужно было в школу. Я решила, что сейчас 8:30… А сколько на самом деле?»
-    ask: () => say(st.nyu ? `${texts().ask} ${fresh(s().nyuThink)(fmtTime(state.current.wrong))}`
+    ask: () => say(st.nyu ? `${texts().ask} ${fresh(s().nyuThink)(fmt(state.current.wrong.h, state.current.wrong.m))}`
                           : texts() ? texts().ask : fresh(s().stops[st.id].ask), ""),
     askMinutes: h => say(fresh(s().minutesAsk)(h), ""),
     // Ню после верного ответа объясняет, что перепутала, и бежит по делам
@@ -217,7 +220,7 @@ function playStop(i, j) {
         unlocks.push(`<div class="unlock">${cat(64, "happy", "", o.id)}<b>${s().newOutfit(s().outfits[o.id])}</b>
           <button class="wear-btn" data-wear="${o.id}" type="button">${s().wear}</button></div>`));
       return { stars, text: s().chapters[ch.id].reward(score, rounds),
-               art: `<span class="end-pic">${(HERO[st.who] || cat)(96, mood)}</span><p class="bubble end-say">${pick(s().finale[band])}</p>` +
+               art: `<span class="end-pic">${cat(96, mood)}</span><p class="bubble end-say">${pick(s().finale[band])}</p>` +
                     `<div class="rewards">${icons}</div>${lockNote}` + (unlocks.length ? `<div class="unlocks">${unlocks.join("")}</div>` : ""),
                next: nxt ? { label: s().nextStop(s().stops[nxt.id].title), go: () => playStop(i, j + 1) }
                    : ending ? { label: s().toEnding, go: () => openEnding(i) } : null };
@@ -244,7 +247,7 @@ export function initStory() {
   $("resetStory").onclick = resetProgress;
   $("toStory").onclick = () => setUi("story");
   $("chBack").onclick = () => { state.chapter = null; show("story"); };
-  initAlbum({ chapters: CHAPTERS, stars: id => progress[id] || 0, total: totalStars });
+  initAlbum({ chapters: CHAPTERS, stars: id => progress[id] || 0, total: totalStars, isDone });
   $("toAlbum").onclick = () => openAlbum();
   // «Надеть» новый наряд прямо с экрана итога
   $("endArt").addEventListener("click", e => {

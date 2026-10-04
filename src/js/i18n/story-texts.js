@@ -47,11 +47,12 @@ const ru = {
   // «Ошибки Ню»: как Ню неверно прочитала часы (t — её ответ); подсказка при ошибке; объяснение её ошибки
   nyuThink: [
     t => `Я решила, что сейчас ${t}… А сколько на самом деле?`,
-    t => `Я подумала, что уже ${t}. Где моя ошибка?`,
+    t => `Я подумала, что уже ${t}. Какое время правильное?`,
     t => `Мне показалось, что ${t}. Помоги, который час?`,
-    t => `Я посмотрела на часы — там ${t}? Правильно?`,
-    t => `Ой, вроде ${t}… Проверь меня!`,
+    t => `Я посмотрела на часы — там ${t}? А сколько на самом деле?`,
+    t => `Ой, вроде ${t}… Найди правильное время!`,
   ],
+  nyuNudge: "Это мой ответ, и он неверный. Поправь стрелочки!",
   nyuRetry: ["Хм, пока не так… Посмотри ещё!", "Почти! Проверь обе стрелки.", "Мяу? Ещё чуть-чуть!", "Не совсем. Короткая — часы, длинная — минуты!"],
   nyuOops: {
     swap: ["Ой! Я перепутала стрелки: часы показывает короткая!", "Стрелки я перепутала! Короткая — часы, длинная — минуты.",
@@ -283,11 +284,12 @@ const en = {
   outfits: { none: "No outfit", bow: "Bow", scarf: "Scarf", glasses: "Glasses", beanie: "Beanie", wreath: "Flower wreath", crown: "Crown" },
   nyuThink: [
     t => `I thought it was ${t}… What time is it really?`,
-    t => `I thought it was already ${t}. Where is my mistake?`,
+    t => `I thought it was already ${t}. What is the right time?`,
     t => `It looked like ${t} to me. What time is it?`,
-    t => `I looked at the clock — is it ${t}? Is that right?`,
-    t => `Oops, maybe ${t}… Check me!`,
+    t => `I looked at the clock — is it ${t}? What time is it really?`,
+    t => `Oops, maybe ${t}… Find the right time!`,
   ],
+  nyuNudge: "That’s my answer, and it’s wrong. Fix the arrows!",
   nyuRetry: ["Hmm, not yet… Look again!", "Almost! Check both hands.", "Meow? A little more!", "Not quite. Short hand — hours, long hand — minutes!"],
   nyuOops: {
     swap: ["Oops! I mixed up the hands: the short one shows the hours!", "I mixed up the hands! Short — hours, long — minutes.",

@@ -107,6 +107,9 @@ $("check").onclick = () => {
   const { h, m } = state.current;
   if (!state.step) {
     const gh = state.guessH, gm = state.level.step === 0 ? 0 : state.guessM;
+    // «Ошибки Ню»: стрелочки ещё стоят на её ответе — это не попытка ребёнка, просто просим поправить
+    const w = state.nyu && state.current.wrong;
+    if (w && gh === w.h && gm === w.m) return state.story.nudge();
     // в «Обучении» (уровень «Ровно час», без шагов) ошибку можно исправить, как и при выборе из 4
     if (state.training && (gh !== h || gm !== m)) return wrongStep(gh, gm);
     return submit(gh, gm, state.training && (state.attempts > 0 || state.revealed));

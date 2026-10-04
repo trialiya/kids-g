@@ -8,7 +8,7 @@ import { ART, cat } from "./art.js";
 import { OUTFITS, getOutfit, setOutfit, outfitOpen } from "./outfits.js";
 
 const s = () => STORY_TEXTS[state.lang];
-let src = null, tab = "stickers"; // src — { chapters, stars(stopId), total() } из story.js
+let src = null, tab = "stickers"; // src — { chapters, stars(stopId), total(), isDone(stop) } из story.js
 
 // Наклейка: рисунок в кружке с белой каймой; gold — золотая (5 из 5), big — наклейка главы, empty — ещё не получена
 export function stickerHtml(art, { gold = false, big = false, empty = false, size = 54 } = {}) {
@@ -19,9 +19,9 @@ function renderStickers() {
   const box = $("albumBody");
   let got = 0, all = 0;
   box.innerHTML = src.chapters.map(ch => {
-    const done = ch.stops.every(st => src.stars(st.id) >= 2);
+    const done = ch.stops.every(src.isDone);
     const items = ch.stops.map(st => {
-      const n = src.stars(st.id), has = n >= 2; all++; got += has;
+      const n = src.stars(st.id), has = src.isDone(st); all++; got += has;
       return `<figure class="slot">${stickerHtml(st.art, { gold: n === 3, empty: !has })}<figcaption>${has ? s().stops[st.id].title : "?"}</figcaption></figure>`;
     }).join("");
     all++; got += done;
