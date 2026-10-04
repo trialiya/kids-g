@@ -6,7 +6,7 @@ import { t, lv } from "./i18n/index.js";
 import { sfx } from "./audio.js";
 import { celebrate, confetti } from "./effects.js";
 import { canSpeak, speak, stopSpeak, toggleSpeak, isSpeakingFrom } from "./speech.js";
-import { drawClock, drawClockInto } from "./clock.js";
+import { drawClock, drawClockInto, addAnimal } from "./clock.js";
 import { explainCorrect, explainMistake, explainClockMistake, timeText, timeWords } from "./explain.js";
 import { show, showMenu } from "./ui.js";
 import { cat } from "./art.js";
@@ -23,6 +23,7 @@ export function start(l, k, type, story = null) {
   state.training = state.kind === "learn";
   state.mode = state.kind === "clocks" ? "clocks" : state.answerType;
   state.qIndex = 0; state.score = 0; state.lastKey = null;
+  if (story) story.animals = []; // зверушки вокруг часов копятся заново на каждой попытке остановки
   $("levelName").textContent = story ? story.title : `${KINDS[state.kind].icon} ${t("lvShort", l.id)}`;
   $("tipText").innerHTML = "💡 " + lv(l).tip;
   $("levelTip").classList.toggle("hidden", !state.training);
@@ -292,6 +293,7 @@ function submit(gh, gm, assisted) {
   if (ok && !assisted) state.score++;
   $("score").textContent = "⭐ " + state.score;
   if (ok) celebrate(!assisted); else sfx.bad();
+  if (ok && !assisted && state.story) addAnimal(); // в истории за каждый ответ с первой попытки — ещё одна зверушка у часов
   if (state.story) state.story.react(ok);
   showFeedback(ok, gh, gm, assisted);
   setSpinEnabled(false);
