@@ -16,6 +16,7 @@ function toggleFs() {
 export function syncFs() {
   const label = t(inFs() ? "fsExit" : "fsEnter");
   $("fsMenu").textContent = label;
+  $("fsMenu").dataset.icon = inFs() ? "✕" : "⛶";
   $("fsGame").textContent = inFs() ? "✕" : "⛶";
 }
 
