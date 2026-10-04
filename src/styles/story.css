@@ -2,7 +2,6 @@
 .ch-day, body[data-ch="day"] { --ch: #F27D52; --chbg: #FFF1DE; }
 .ch-tea, body[data-ch="tea"] { --ch: #E8628D; --chbg: #E6F5EA; }
 .ch-shop, body[data-ch="shop"] { --ch: #D9951F; --chbg: #F6E7C8; }
-.ch-nyu, body[data-ch="nyu"] { --ch: #E8628D; --chbg: #FFEAF2; }
 
 .hero { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
 .hero > span, .scene > span { flex: none; line-height: 0; }
@@ -142,3 +141,16 @@ button.outfit:disabled { opacity: 1; }
 .unlock b { font-size: 1rem; }
 .wear-btn { min-height: 40px; padding: 4px 16px; background: var(--ok); color: #fff; border: 3px solid var(--ink); border-radius: 16px; box-shadow: 0 3px 0 var(--ink); }
 @media (prefers-reduced-motion: reduce) { .unlock { animation: none; } }
+/* мини-концовка главы: картинка-комикс над репликами */
+.comic-scene { margin-bottom: 10px; line-height: 0; }
+.comic-scene .scene-pic { width: 100%; height: auto; display: block; }
+#comic .comic-scene:not(.hidden) + .chat { min-height: 34vh; }
+#chEnding { margin-top: 16px; background: #FFE0EC; }
+/* «Ошибки Ню»: её ответ среди вариантов — зачёркнут и подписан */
+.choices button.nyu-pick { position: relative; text-decoration: line-through; text-decoration-thickness: 3px; }
+.nyu-tag { position: absolute; top: -10px; right: -6px; background: #FF8FB8; color: #fff; font-size: .75rem; font-weight: bold;
+  padding: 2px 8px; border-radius: 10px; border: 2px solid var(--ink); text-decoration: none; }
+#answer.nyu-answer { position: relative; }
+#answer.nyu-answer .val { color: #E8628D; text-decoration: line-through; text-decoration-thickness: 3px; }
+#answer.nyu-answer::before { content: attr(data-tag); position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+  background: #FF8FB8; color: #fff; font-size: .75rem; font-weight: bold; padding: 2px 8px; border-radius: 10px; border: 2px solid var(--ink); }

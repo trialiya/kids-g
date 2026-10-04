@@ -45,6 +45,7 @@
   <!-- Вступление к главе: комикс-переписка, нажатие на диалог — следующая реплика -->
   <section id="comic" class="card hidden">
     <div class="chtop"><button id="comicBack" type="button"></button><h2 id="comicTitle"></h2></div>
+    <div class="comic-scene hidden" id="comicScene"></div>
     <div class="chat" id="chat" role="button" tabindex="0" aria-live="polite">
       <div class="chat-log" id="chatLog"></div>
       <p class="chat-tap" id="chatTap"></p>
@@ -57,6 +58,7 @@
     <div class="chtop"><button id="chBack" type="button"></button><h2 id="chTitle"></h2></div>
     <div class="hero"><span id="chWho"></span><p class="bubble" id="chIntro"></p></div>
     <div class="stops" id="stops"></div>
+    <button class="album-btn hidden" id="chEnding" type="button"></button>
   </section>
 
   <!-- Классика: выбор уровня -->

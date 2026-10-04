@@ -49,13 +49,10 @@ const BARSIK = { fur: "#A3A3AF", ears: "#A3A3AF", stripes: "#6F6F7D", muzzle: "#
   nose: `<path d="M54.5 73 h11 l-5.5 6.5 Z" fill="#B97A7F" stroke="${INK}" stroke-width="2" stroke-linejoin="round"/>` };
 export const cat = (size = 96, mood = "", label = "", outfit = getOutfit()) => kitty(size, mood, label, outfit, BARSIK);
 
-// Ню: кремовая колор-пойнт — серо-голубые ушки и маска, персиковое пятнышко на лбу, голубые глаза,
-// носик наполовину розовый, наполовину тёмный, розовый бантик (по фото нашей кошки)
-const NYU = { fur: "#F1E8DC", ears: "#9F9CAE", stripes: "#8C889C", muzzle: "#FBF7F1", eye: "#8EC5E8",
-  mask: `<path d="M24 70 C26 46 44 38 60 40 C76 38 94 46 96 70 C88 92 32 92 24 70 Z" fill="#A29FB3" opacity=".9"/>
-         <path d="M38 33 C48 30 55 37 53 51 C45 53 36 46 38 33 Z" fill="#F0BE90"/>`,
-  nose: `<path d="M54.5 73 h11 l-5.5 6.5 Z" fill="#E9A2A4" stroke="${INK}" stroke-width="2" stroke-linejoin="round"/>
-         <path d="M60 73 h5.5 l-5.5 6.5 Z" fill="#4A4250"/>`,
+// Ню: тайская кошка — кремовая шубка, тёмно-шоколадные ушки и маска, голубые глаза, розовый бантик
+const NYU = { fur: "#F5ECDF", ears: "#5E4637", stripes: "none", muzzle: "#A2826C", eye: "#6FB6E8",
+  mask: `<path d="M60 42 C78 46 92 60 90 78 C88 96 32 96 30 78 C28 60 42 46 60 42 Z" fill="#8C6A55"/>`,
+  nose: `<path d="M54.5 73 h11 l-5.5 6.5 Z" fill="#3E2E26" stroke="${INK}" stroke-width="2" stroke-linejoin="round"/>`,
   extra: `<g transform="translate(88 30) rotate(20)">
     <path d="M0 0 L-13 -9 L-13 9 Z M0 0 L13 -9 L13 9 Z" fill="#FF8FB8" stroke="${INK}" stroke-width="2.5" stroke-linejoin="round"/>
     <circle r="4.5" fill="#FFB3CF" stroke="${INK}" stroke-width="2.5"/></g>` };
@@ -122,12 +119,8 @@ export const townClock = (size = 56) => svg(size, "0 0 60 60", `
   <path d="M30 32 V25 M30 32 l5 3" stroke="${INK}" stroke-width="2.2" stroke-linecap="round"/>
   <rect x="25" y="46" width="10" height="12" rx="5" fill="#8B5E3C" stroke="${INK}" stroke-width="2"/>`);
 
-export const bowIcon = (size = 44, fill = "#FF8FB8") => svg(size, "0 0 40 28", `
-  <path d="M20 14 L4 3 L4 25 Z M20 14 L36 3 L36 25 Z" fill="${fill}" stroke="${INK}" stroke-width="2.4" stroke-linejoin="round"/>
-  <circle cx="20" cy="14" r="5" fill="${fill}" stroke="${INK}" stroke-width="2.4"/>`);
-
 export const lock = (size = 22) => svg(size, "0 0 24 24", `
   <g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></g>`);
 
 // Картинка по имени — для данных сюжета
-export const ART = { cat: s => cat(s), nyu: s => nyu(s), bow: s => bowIcon(s), bunny, rabbit, dog, butterfly, bowl, moon, cup: s => cup(s), fish: s => fish(s), gear: s => gear(s), townClock };
+export const ART = { cat: s => cat(s), nyu: s => nyu(s), bunny, rabbit, dog, butterfly, bowl, moon, cup: s => cup(s), fish: s => fish(s), gear: s => gear(s), townClock };

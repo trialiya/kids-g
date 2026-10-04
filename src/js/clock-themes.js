@@ -50,12 +50,11 @@ export const CLOCK_THEMES = {
     path(svg, "M100 -20 L186 30 H14 Z", "#C0504D"); // крыша башни
     ring(24, 108, (x, y) => circle(svg, x, y, 4, "#C8C3BC", 1.5));
   } },
-  // Глава 4 «Ошибки Ню»: розовые часы с бантиками
-  nyuMorning: { face: "#FFF7FA", rim: "#FF8FB8", back: svg => ring(12, 106, (x, y) => circle(svg, x, y, 7, "#FFD6E6", 2)) },
-  nyuGarden: { face: "#F7FFF7", rim: "#F48FB1", back: svg => ring(18, 104, (x, y) => circle(svg, x, y, 10, "#C8EFC4", 2)) },
-  nyuParty: { face: "#FFFDF5", rim: "#C77DFF", back: svg => ring(16, 106, (x, y, a) =>
+  // «Ошибки Ню» в конце каждой главы: розовые часы
+  nyuDay: { face: "#FFF7FA", rim: "#FF8FB8", back: svg => ring(12, 106, (x, y) => circle(svg, x, y, 7, "#FFD6E6", 2)) },
+  nyuTea: { face: "#FFFDF5", rim: "#C77DFF", back: svg => ring(16, 106, (x, y, a) =>
     circle(svg, x, y, 7, ["#FF8FB8", "#FFD23F", "#7FC8F8", "#9BE38B"][Math.round(a * 16 / (2 * Math.PI)) % 4], 2)) },
-  nyuTrain: { face: "#FFFDF5", rim: "#E8628D", rimW: 8, back: svg => {
+  nyuShop: { face: "#FFFDF5", rim: "#E8628D", rimW: 8, back: svg => {
     path(svg, "M58 -18 h84 l-10 26 h-64 Z", "#FF8FB8"); // табло вокзала
     ring(24, 108, (x, y) => circle(svg, x, y, 4, "#F8C6D8", 1.5));
   } },

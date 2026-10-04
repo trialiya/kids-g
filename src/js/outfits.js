@@ -2,14 +2,14 @@
 // Рисунки — слой поверх мордочки в координатах 120×120, как у cat().
 const INK = "#3A2E39";
 
-// stars — сколько звёзд всего нужно в истории (максимум 12 остановок × 3 = 36)
+// stars — сколько звёзд всего нужно в истории (максимум 15 остановок × 3 = 45; корона — за все)
 export const OUTFITS = [
   { id: "bow", stars: 3 },
   { id: "scarf", stars: 8 },
   { id: "glasses", stars: 14 },
   { id: "beanie", stars: 20 },
   { id: "wreath", stars: 28 },
-  { id: "crown", stars: 36 },
+  { id: "crown", stars: 45 },
 ];
 
 const flower = (x, y, c) => `<g transform="translate(${x} ${y})">${[0, 72, 144, 216, 288].map(a =>

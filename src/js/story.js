@@ -12,42 +12,40 @@ import { start } from "./game.js";
 import { showComic } from "./comic.js";
 import { initAlbum, openAlbum, stickerHtml } from "./album.js";
 import { OUTFITS, setOutfit } from "./outfits.js";
-import { ART, cat, nyu, lock, fish, cup, gear, bowIcon } from "./art.js";
+import { ART, cat, nyu, lock, fish, cup, gear } from "./art.js";
 import { nyuMistake } from "./nyu-errors.js";
 
 const ROUNDS = 5; // в истории раунды короче, чем в классике
 const s = () => STORY_TEXTS[state.lang];
 const pick = arr => arr[Math.floor(Math.random() * arr.length)];
 const REWARD = { fish: (sz, on) => fish(sz, on ? "#F27D52" : "#eadfce"), cup: (sz, on) => cup(sz, on ? "#FF8FB1" : "#e3ece5"),
-                 gear: (sz, on) => gear(sz, on ? "#F2B33D" : "#e8dcc4"), bow: (sz, on) => bowIcon(sz, on ? "#FF8FB8" : "#eadde3") };
+                 gear: (sz, on) => gear(sz, on ? "#F2B33D" : "#e8dcc4") };
 const HERO = { cat, nyu }; // герои с настроением (радуется / грустит)
 
-// who — кто говорит в сцене, art — картинка остановки; level — уровень сложности из levels.js
+// who — кто говорит в сцене, art — картинка остановки; level — уровень сложности из levels.js.
+// nyu — последняя остановка главы «Ошибки Ню»: Ню неверно прочитала часы, её ответ уже выбран — ребёнок находит правильный.
+// После неё — концовка главы (комикс с картинкой, endings в story-texts.js).
 export const CHAPTERS = [
   { id: "day", art: "cat", reward: "fish", type: "choice", stops: [
     { id: "breakfast", level: 1, art: "bowl", who: "cat" },
     { id: "walk", level: 1, art: "bunny", who: "cat" },
     { id: "play", level: 2, art: "dog", who: "cat" },
     { id: "night", level: 2, art: "moon", who: "cat" },
+    { id: "nyuDay", level: 2, art: "nyu", who: "nyu", nyu: true },
   ] },
   { id: "tea", art: "cup", reward: "cup", type: "choice", stops: [
     { id: "teaBunny", level: 3, art: "bunny", who: "bunny" },
     { id: "teaDog", level: 3, art: "dog", who: "dog" },
     { id: "teaButterfly", level: 4, art: "butterfly", who: "butterfly" },
     { id: "teaRabbit", level: 4, art: "rabbit", who: "rabbit" },
+    { id: "nyuTea", level: 4, art: "nyu", who: "nyu", nyu: true },
   ] },
   { id: "shop", art: "gear", reward: "gear", type: "input", stops: [
     { id: "fixBunny", level: 3, art: "bunny", who: "bunny" },
     { id: "fixDog", level: 4, art: "dog", who: "dog" },
     { id: "fixButterfly", level: 4, art: "butterfly", who: "butterfly" },
     { id: "fixTown", level: 5, art: "townClock", who: "townClock" },
-  ] },
-  // «Найди ошибку»: Ню всё делает быстро и ставит часы неправильно — ребёнок переставляет стрелки (fix)
-  { id: "nyu", art: "nyu", reward: "bow", type: "input", fix: true, stops: [
-    { id: "nyuMorning", level: 2, art: "bowl", who: "nyu" },
-    { id: "nyuGarden", level: 3, art: "butterfly", who: "nyu" },
-    { id: "nyuParty", level: 4, art: "cup", who: "nyu" },
-    { id: "nyuTrain", level: 5, art: "townClock", who: "nyu" },
+    { id: "nyuShop", level: 5, art: "nyu", who: "nyu", nyu: true },
   ] },
 ];
 
@@ -120,7 +118,7 @@ function renderChapter(i) {
   $("chapter").className = `card ch-${ch.id}` + ($("chapter").classList.contains("hidden") ? " hidden" : "");
   $("chBack").textContent = s().backChapters;
   $("chTitle").textContent = txt.title;
-  $("chWho").innerHTML = (HERO[ch.art] || cat)(88); // в главе Ню рассказывает Ню
+  $("chWho").innerHTML = cat(88);
   $("chIntro").textContent = txt.intro;
   const box = $("stops");
   box.innerHTML = "";
@@ -136,6 +134,16 @@ function renderChapter(i) {
     b.onclick = () => playStop(i, j);
     box.appendChild(b);
   });
+  // глава пройдена — концовку можно посмотреть ещё раз
+  $("chEnding").classList.toggle("hidden", !ch.stops.every(isDone));
+  $("chEnding").textContent = `📖 ${s().endingAgain}`;
+  $("chEnding").onclick = () => openEnding(i);
+}
+
+// Мини-концовка главы: картинка-комикс и реплики героев (дочитать / дослушать), потом — к остановкам главы
+function openEnding(i) {
+  stopSpeak();
+  showComic(CHAPTERS[i].id, () => { renderChapter(i); show("chapter"); }, 0, "endings");
 }
 
 // Глава всегда открывается вступлением-комиксом, после него (или «Пропустить») — дорожка остановок
@@ -167,31 +175,24 @@ function playStop(i, j) {
   state.story = {
     chapter: ch.id, rounds: ROUNDS, title: txt.title, clock: st.id, // clock — оформление часов (clock-themes.js)
     // время вопроса: из интервала случайной фразы остановки; в мастерской фраз нет — время любое (null → как в классике)
-    fix: !!ch.fix, hero: HERO[st.who] || cat,
+    nyu: !!st.nyu, nyuTag: s().names.nyu, hero: HERO[st.who] || cat,
     next() {
-      if (ch.fix) { // Ню: случайное время уровня (без повторов в сессии) и её ошибка
-        let h, m, key, tries = 0;
-        do {
-          h = 1 + Math.floor(Math.random() * 12);
-          m = level.minutes ? pick(level.minutes) : Math.floor(Math.random() * 60);
-          key = h + ":" + m;
-        } while (used.times.has(key) && ++tries < 50);
-        used.times.add(key);
-        mistake = nyuMistake(h, m, level.step, used.errors);
-        used.errors.add(mistake.error);
-        return { h, m, wrong: { h: mistake.h, m: mistake.m } };
-      }
       if (!PHRASES[st.id]) return null;
       const q = pickQuestion(st.id, level, used);
       phrase = q.phrase;
-      return { h: q.h, m: q.m };
+      if (!st.nyu) return { h: q.h, m: q.m };
+      mistake = nyuMistake(q.h, q.m, level.step, used.errors); // как Ню неверно прочитала часы
+      used.errors.add(mistake.error);
+      return { h: q.h, m: q.m, wrong: { h: mistake.h, m: mistake.m } };
     },
     onStart: newSession,
-    ask: () => say(ch.fix ? fresh(s().nyuAsk)(fmtTime(state.current)) : texts() ? texts().ask : fresh(s().stops[st.id].ask), ""),
+    // Ню: «Мне нужно было в школу. Я решила, что сейчас 8:30… А сколько на самом деле?»
+    ask: () => say(st.nyu ? `${texts().ask} ${fresh(s().nyuThink)(fmtTime(state.current.wrong))}`
+                          : texts() ? texts().ask : fresh(s().stops[st.id].ask), ""),
     askMinutes: h => say(fresh(s().minutesAsk)(h), ""),
-    // в главе Ню после исправления она объясняет, что перепутала
-    react: ok => say(ok ? (ch.fix ? fresh(s().nyuOops[mistake.error]) : texts() ? texts().win : fresh(s().stops[st.id].win))
-                        : fresh(ch.fix ? s().nyuRetry : s().oops), ok ? "happy" : "sad"),
+    // Ню после верного ответа объясняет, что перепутала, и бежит по делам
+    react: ok => say(ok ? (st.nyu ? `${fresh(s().nyuOops[mistake.error])} ${texts().win}` : texts() ? texts().win : fresh(s().stops[st.id].win))
+                        : fresh(st.nyu ? s().nyuRetry : s().oops), ok ? "happy" : "sad"),
     finish(score, rounds) {
       const stars = score >= rounds ? 3 : score >= rounds - 1 ? 2 : score >= 2 ? 1 : 0;
       const before = progress[st.id] || 0, starsBefore = totalStars(), chapterBefore = ch.stops.every(isDone);
@@ -201,6 +202,7 @@ function playStop(i, j) {
       const icons = Array.from({ length: rounds }, (_, k) => REWARD[ch.reward](34, k < score)).join("");
       // следующий раздел главы — только если эта остановка пройдена (сейчас или раньше), иначе подсказка, сколько нужно
       const nxt = isDone(st) ? ch.stops[j + 1] : null;
+      const ending = isDone(st) && !ch.stops[j + 1]; // последняя остановка пройдена — дальше концовка главы
       const lockNote = !isDone(st) && (ch.stops[j + 1] || CHAPTERS[i + 1]) ? `<p class="end-lock">${lock(18)} ${s().needToPass(PASS_SCORE(rounds), rounds)}</p>` : "";
       // итоговая реплика Барсика — по числу верных ответов с первой попытки
       const band = score >= rounds ? "all" : score >= rounds - 1 ? "almost" : score >= Math.ceil(rounds / 2) ? "half" : score > 0 ? "some" : "none";
@@ -217,7 +219,8 @@ function playStop(i, j) {
       return { stars, text: s().chapters[ch.id].reward(score, rounds),
                art: `<span class="end-pic">${(HERO[st.who] || cat)(96, mood)}</span><p class="bubble end-say">${pick(s().finale[band])}</p>` +
                     `<div class="rewards">${icons}</div>${lockNote}` + (unlocks.length ? `<div class="unlocks">${unlocks.join("")}</div>` : ""),
-               next: nxt ? { label: s().nextStop(s().stops[nxt.id].title), go: () => playStop(i, j + 1) } : null };
+               next: nxt ? { label: s().nextStop(s().stops[nxt.id].title), go: () => playStop(i, j + 1) }
+                   : ending ? { label: s().toEnding, go: () => openEnding(i) } : null };
     },
     back: () => { stopSpeak(); renderChapter(i); show("chapter"); },
     toMenuLabel: s().toChapter, backLabel: s().back,

@@ -20,7 +20,7 @@ export function start(l, k, type, story = null) {
   $("toMenu").textContent = story ? story.toMenuLabel : t("toMenu");
   $("back").textContent = story ? story.backLabel : t("back");
   state.level = l; state.kind = k; state.answerType = type || "choice";
-  state.fix = !!(story && story.fix); // «Найди ошибку»: часы Ню показывают не то время — ребёнок переставляет стрелки
+  state.nyu = !!(story && story.nyu); // «Ошибки Ню»: её неверный ответ уже выбран — ребёнок находит правильный
   state.training = state.kind === "learn";
   state.mode = state.kind === "clocks" ? "clocks" : state.answerType;
   state.qIndex = 0; state.score = 0; state.lastKey = null;
@@ -32,7 +32,7 @@ export function start(l, k, type, story = null) {
   const clocks = state.mode === "clocks";
   $("clock").classList.toggle("hidden", clocks);
   document.querySelector(".legend").classList.toggle("hidden", clocks);
-  $("timeCard").classList.toggle("hidden", !clocks && !state.fix); // в «Найди ошибку» — какое время нужно
+  $("timeCard").classList.toggle("hidden", !clocks);
   $("choices").classList.toggle("clock-grid", clocks);
   const inp = state.mode === "input";
   $("answer").classList.toggle("hidden", !inp);
@@ -64,13 +64,11 @@ function nextQuestion() {
   // в «Обучении» сначала спрашиваем только часы, потом минуты (и в выборе из 4, и при вводе стрелочками)
   state.step = state.training && state.mode !== "clocks" && state.level.step > 0 ? "h" : null;
   state.helped = false;
-  if (state.fix) { // стрелки начинают с ошибки Ню, ребёнок их переставляет
+  if (state.nyu) { // без шагов: Ню уже назвала время целиком; при вводе стрелочки стоят на её ответе
     state.step = null;
-    state.guessH = state.current.wrong.h; state.guessM = state.current.wrong.m;
-    $("timeBig").textContent = fmt(state.current.h, state.current.m);
-    $("timeWords").textContent = timeWords(state.current.h, state.current.m);
-    drawClock(state.guessH, state.guessM);
-  } else if (state.mode === "clocks") {
+    if (state.mode === "input") { state.guessH = state.current.wrong.h; state.guessM = state.current.wrong.m; }
+  }
+  if (state.mode === "clocks") {
     $("timeBig").textContent = state.level.step === 0 ? state.current.h + ":00" : fmt(state.current.h, state.current.m);
     $("timeWords").textContent = timeWords(state.current.h, state.current.m);
   } else drawClock(state.current.h, state.current.m);
@@ -90,17 +88,19 @@ function setSpinEnabled(on) {
 }
 
 function updateAnswer() {
+  // «Ошибки Ню» при вводе: пока стрелочки стоят на её ответе — подписываем «Ню»
+  const w = state.nyu && !state.answered && state.current.wrong;
+  $("answer").classList.toggle("nyu-answer", !!w && state.guessH === w.h && state.guessM === w.m);
+  if (w) $("answer").dataset.tag = state.story.nyuTag;
   $("hVal").textContent = state.guessH;
   $("mVal").textContent = state.step === "h" ? "··" : pad(state.guessM); // минуты ещё не спрашивали
 }
 
 const stepM = () => Math.max(state.level.step, 1);
-// в «Найди ошибку» стрелки на часах двигаются вместе с ответом
-const moved = () => { updateAnswer(); if (state.fix && !state.answered) drawClock(state.guessH, state.guessM); };
-$("hUp").onclick = () => { state.guessH = state.guessH % 12 + 1; moved(); };
-$("hDn").onclick = () => { state.guessH = (state.guessH + 10) % 12 + 1; moved(); };
-$("mUp").onclick = () => { state.guessM = (state.guessM + stepM()) % 60; moved(); };
-$("mDn").onclick = () => { state.guessM = (state.guessM - stepM() + 60) % 60; moved(); };
+$("hUp").onclick = () => { state.guessH = state.guessH % 12 + 1; updateAnswer(); };
+$("hDn").onclick = () => { state.guessH = (state.guessH + 10) % 12 + 1; updateAnswer(); };
+$("mUp").onclick = () => { state.guessM = (state.guessM + stepM()) % 60; updateAnswer(); };
+$("mDn").onclick = () => { state.guessM = (state.guessM - stepM() + 60) % 60; updateAnswer(); };
 
 $("check").onclick = () => {
   if (state.answered) return;
@@ -141,6 +141,8 @@ function makeChoices() {
     cand.push([nextHour(h), snap(m + st)], [prevHour(h), snap(m - st)]);
   }
   const seen = new Set([key(h, m)]), opts = [{ h, m }];
+  const nyuPick = state.nyu ? state.current.wrong : null; // ответ Ню — среди вариантов, уже выбран и зачёркнут
+  if (nyuPick) { seen.add(key(nyuPick.h, nyuPick.m)); opts.push(nyuPick); }
   // на картинке часы с разницей в минуту не отличить — для режима «Найди часы» нужна заметная разница
   const close = (ch, cm) => state.mode === "clocks" && opts.some(o => o.h === ch && Math.min(Math.abs(o.m - cm), 60 - Math.abs(o.m - cm)) < 5);
   shuffle(cand).forEach(([ch, cm]) => {
@@ -167,6 +169,10 @@ function makeChoices() {
       b.setAttribute("aria-label", t("optAria", i + 1, o.h, o.m));
     }
     b.onclick = () => choose(o, b);
+    if (o === nyuPick) { // «это выбрала Ню» — неверно, нажать нельзя
+      b.classList.add("wrong", "nyu-pick"); b.disabled = true;
+      b.insertAdjacentHTML("beforeend", `<span class="nyu-tag">${state.story.nyuTag}</span>`);
+    }
     box.appendChild(b);
   });
 }
@@ -272,8 +278,7 @@ function showRetryFeedback(gh, gm) {
   f.className = "feedback bad";
   const speakBtn = canSpeak
     ? `<button class="speak" id="speak" type="button" aria-label="${t("speakHint")}" title="${t("speakTitle")}">🔊</button>` : "";
-  const explain = state.fix ? explainClockMistake : explainMistake; // в «Найди ошибку» — что не так на часах
-  const bullets = explain(state.current.h, state.current.m, gh, gm).map(s => `<li>${s}</li>`).join("");
+  const bullets = explainMistake(state.current.h, state.current.m, gh, gm).map(s => `<li>${s}</li>`).join("");
   f.innerHTML = `<h3>${mood(false)}${t("fbRetry")}${speakBtn}</h3>
     <details id="hint"><summary>${t("hintLabel")}</summary><ul>${bullets}</ul>
     ${state.mode === "choice" ? `<div class="hintnote">${t("hintNote")}</div>` : ""}</details>`;
