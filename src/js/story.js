@@ -41,7 +41,26 @@ export const CHAPTERS = [
 /* ---------- прогресс: { stopId: звёзды 0..3 }, есть ключ — остановка пройдена ---------- */
 let progress = {};
 try { progress = JSON.parse(localStorage.getItem("storyProgress")) || {}; } catch (e) { /* хранилище недоступно */ }
-function save() { try { localStorage.setItem("storyProgress", JSON.stringify(progress)); } catch (e) {} }
+function save() {
+  try { localStorage.setItem("storyProgress", JSON.stringify(progress)); } catch (e) {}
+  keepStorage();
+}
+
+// Просим браузер не удалять данные игры, когда на телефоне мало места.
+// Вызываем после первой пройденной остановки: ребёнок уже играет, и Firefox, если спросит разрешение, спросит один раз.
+function keepStorage() {
+  const st = navigator.storage;
+  if (!st || !st.persist || !st.persisted) return;
+  st.persisted().then(yes => yes || st.persist()).catch(() => { /* не получилось — прогресс всё равно в localStorage */ });
+}
+
+function resetProgress() {
+  if (!confirm(s().resetAsk)) return;
+  progress = {};
+  try { localStorage.removeItem("storyProgress"); } catch (e) {}
+  state.chapter = null;
+  renderStory();
+}
 
 const isDone = st => st.id in progress;
 const doneCount = ch => ch.stops.filter(isDone).length;
@@ -54,6 +73,8 @@ export function renderStory() {
   $("storyCat").innerHTML = cat(104, "", "Мурка");
   $("storyHello").textContent = s().hello;
   $("toClassic").textContent = s().classic;
+  $("resetStory").textContent = s().reset;
+  $("resetStory").classList.toggle("hidden", !Object.keys(progress).length); // сбрасывать нечего — кнопку не показываем
   $("toStory").textContent = s().toStory;
   const box = $("chapters");
   box.innerHTML = "";
@@ -140,6 +161,7 @@ export function setUi(ui) {
 
 export function initStory() {
   $("toClassic").onclick = () => setUi("classic");
+  $("resetStory").onclick = resetProgress;
   $("toStory").onclick = () => setUi("story");
   $("chBack").onclick = () => { state.chapter = null; show("story"); };
   document.addEventListener("langchange", renderStory);
