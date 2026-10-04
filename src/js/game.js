@@ -20,6 +20,7 @@ export function start(l, k, type, story = null) {
   $("toMenu").textContent = story ? story.toMenuLabel : t("toMenu");
   $("back").textContent = story ? story.backLabel : t("back");
   state.level = l; state.kind = k; state.answerType = type || "choice";
+  state.nyu = !!(story && story.nyu); // «Ошибки Ню»: её неверный ответ уже выбран — ребёнок находит правильный
   state.training = state.kind === "learn";
   state.mode = state.kind === "clocks" ? "clocks" : state.answerType;
   state.qIndex = 0; state.score = 0; state.lastKey = null;
@@ -63,6 +64,10 @@ function nextQuestion() {
   // в «Обучении» сначала спрашиваем только часы, потом минуты (и в выборе из 4, и при вводе стрелочками)
   state.step = state.training && state.mode !== "clocks" && state.level.step > 0 ? "h" : null;
   state.helped = false;
+  if (state.nyu) { // без шагов: Ню уже назвала время целиком; при вводе стрелочки стоят на её ответе
+    state.step = null;
+    if (state.mode === "input") { state.guessH = state.current.wrong.h; state.guessM = state.current.wrong.m; }
+  }
   if (state.mode === "clocks") {
     $("timeBig").textContent = state.level.step === 0 ? state.current.h + ":00" : fmt(state.current.h, state.current.m);
     $("timeWords").textContent = timeWords(state.current.h, state.current.m);
@@ -83,6 +88,10 @@ function setSpinEnabled(on) {
 }
 
 function updateAnswer() {
+  // «Ошибки Ню» при вводе: пока стрелочки стоят на её ответе — подписываем «Ню»
+  const w = state.nyu && !state.answered && state.current.wrong;
+  $("answer").classList.toggle("nyu-answer", !!w && state.guessH === w.h && state.guessM === w.m);
+  if (w) $("answer").dataset.tag = state.story.nyuTag;
   $("hVal").textContent = state.guessH;
   $("mVal").textContent = state.step === "h" ? "··" : pad(state.guessM); // минуты ещё не спрашивали
 }
@@ -98,6 +107,9 @@ $("check").onclick = () => {
   const { h, m } = state.current;
   if (!state.step) {
     const gh = state.guessH, gm = state.level.step === 0 ? 0 : state.guessM;
+    // «Ошибки Ню»: стрелочки ещё стоят на её ответе — это не попытка ребёнка, просто просим поправить
+    const w = state.nyu && state.current.wrong;
+    if (w && gh === w.h && gm === w.m) return state.story.nudge();
     // в «Обучении» (уровень «Ровно час», без шагов) ошибку можно исправить, как и при выборе из 4
     if (state.training && (gh !== h || gm !== m)) return wrongStep(gh, gm);
     return submit(gh, gm, state.training && (state.attempts > 0 || state.revealed));
@@ -132,6 +144,8 @@ function makeChoices() {
     cand.push([nextHour(h), snap(m + st)], [prevHour(h), snap(m - st)]);
   }
   const seen = new Set([key(h, m)]), opts = [{ h, m }];
+  const nyuPick = state.nyu ? state.current.wrong : null; // ответ Ню — среди вариантов, уже выбран и зачёркнут
+  if (nyuPick) { seen.add(key(nyuPick.h, nyuPick.m)); opts.push(nyuPick); }
   // на картинке часы с разницей в минуту не отличить — для режима «Найди часы» нужна заметная разница
   const close = (ch, cm) => state.mode === "clocks" && opts.some(o => o.h === ch && Math.min(Math.abs(o.m - cm), 60 - Math.abs(o.m - cm)) < 5);
   shuffle(cand).forEach(([ch, cm]) => {
@@ -158,6 +172,10 @@ function makeChoices() {
       b.setAttribute("aria-label", t("optAria", i + 1, o.h, o.m));
     }
     b.onclick = () => choose(o, b);
+    if (o === nyuPick) { // «это выбрала Ню» — неверно, нажать нельзя
+      b.classList.add("wrong", "nyu-pick"); b.disabled = true;
+      b.insertAdjacentHTML("beforeend", `<span class="nyu-tag">${state.story.nyuTag}</span>`);
+    }
     box.appendChild(b);
   });
 }
@@ -326,7 +344,7 @@ document.addEventListener("keydown", e => {
 
 // Большой смайлик: радостный за верный ответ, грустный — за ошибку
 function mood(ok) {
-  if (state.story) return `<span class="mood ${ok ? "happy" : "sad"}" aria-hidden="true">${cat(56, ok ? "happy" : "sad")}</span>`;
+  if (state.story) return `<span class="mood ${ok ? "happy" : "sad"}" aria-hidden="true">${(state.story.hero || cat)(56, ok ? "happy" : "sad")}</span>`;
   const faces = ok ? ["😄", "😃", "🥳", "😊"] : ["😢", "😟", "🙁", "😿"];
   return `<span class="mood ${ok ? "happy" : "sad"}" aria-hidden="true">${faces[Math.floor(Math.random() * faces.length)]}</span>`;
 }

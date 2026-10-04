@@ -5,20 +5,25 @@ import { state } from "./state.js";
 import { STORY_TEXTS } from "./i18n/story-texts.js";
 import { show } from "./ui.js";
 import { speak, stopSpeak, canSpeak } from "./speech.js";
-import { ART, cat } from "./art.js";
+import { ART, cat, nyu } from "./art.js";
+import { ENDING_SCENES } from "./ending-scenes.js";
 
 const s = () => STORY_TEXTS[state.lang];
 // Высота голоса героя: Барсик чуть выше обычного, Бобик и часы на башне — ниже, Зайка и Бабочка — тоненько
-const PITCH = { cat: 1.15, bunny: 1.5, dog: .75, butterfly: 1.7, rabbit: 1.3, townClock: .6 };
+const PITCH = { nyu: 1.4, cat: 1.15, bunny: 1.5, dog: .75, butterfly: 1.7, rabbit: 1.3, townClock: .6 };
 
-let lines = [], pos = 0, done = null, chId = null;
+let lines = [], pos = 0, done = null, chId = null, kind = "comics";
 
-// chapterId — id главы из story.js, onDone — что открыть после вступления (дорожку остановок)
-export function showComic(chapterId, onDone, shown = 0) {
-  const txt = s().comics[chapterId];
-  lines = txt.lines; pos = 0; done = onDone; chId = chapterId;
+// chapterId — id главы из story.js, onDone — что открыть после (дорожку остановок);
+// which — "comics" (вступление к главе) или "endings" (мини-концовка с картинкой-комиксом)
+export function showComic(chapterId, onDone, shown = 0, which = "comics") {
+  const txt = s()[which][chapterId];
+  lines = txt.lines; pos = 0; done = onDone; chId = chapterId; kind = which;
   $("comic").className = `card ch-${chapterId}`;
-  $("comicTitle").textContent = s().chapters[chapterId].title;
+  $("comicTitle").textContent = txt.title || s().chapters[chapterId].title;
+  const pic = which === "endings" && ENDING_SCENES[chapterId];
+  $("comicScene").classList.toggle("hidden", !pic);
+  $("comicScene").innerHTML = pic ? pic(s().bom) : "";
   $("comicBack").textContent = s().backChapters;
   $("chatLog").innerHTML = "";
   show("comic");
@@ -32,7 +37,7 @@ function nextLine(silent = false) {
   const left = who === "cat"; // Барсик пишет слева, друзья — справа, как в переписке
   const row = document.createElement("div");
   row.className = "msg " + (left ? "left" : "right");
-  row.innerHTML = `<span class="ava">${who === "cat" ? cat(54, mood || "") : ART[who](48)}</span>
+  row.innerHTML = `<span class="ava">${who === "cat" ? cat(54, mood || "") : who === "nyu" ? nyu(54, mood || "") : ART[who](48)}</span>
     <p class="bubble"><b>${s().names[who]}</b><span class="say"></span></p>`;
   row.querySelector(".say").textContent = text;
   $("chatLog").appendChild(row);
@@ -40,7 +45,7 @@ function nextLine(silent = false) {
   if (!silent && canSpeak && state.soundOn) speak(row.querySelector(".say"), null, PITCH[who] || 1);
   const last = pos >= lines.length;
   $("chatTap").textContent = last ? "" : s().comicTap;
-  $("comicSkip").textContent = last ? s().comicStart : s().comicSkip;
+  $("comicSkip").textContent = last ? (kind === "endings" ? s().comicEnd : s().comicStart) : s().comicSkip;
   $("comicSkip").classList.toggle("start", last);
 }
 
@@ -52,7 +57,7 @@ export function initComic() {
   // сменили язык посреди вступления — показываем уже прочитанные реплики на новом языке
   document.addEventListener("langchange", () => {
     if ($("comic").classList.contains("hidden")) return;
-    stopSpeak(); showComic(chId, done, pos);
+    stopSpeak(); showComic(chId, done, pos, kind);
   });
   $("comicSkip").onclick = finish;
   $("comicBack").onclick = () => { stopSpeak(); state.chapter = null; show("story"); };

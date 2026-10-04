@@ -4,10 +4,12 @@ import { state } from "./state.js";
 import { drawAnimal, ANIMALS } from "./animals.js";
 import catFace from "../assets/cat-face.jpg";
 import { cat } from "./art.js";
+import { CLOCK_THEMES } from "./clock-themes.js";
 
 export function drawClock(h, m) {
   // в основном режиме цифры минут — это подсказка, их нет; в истории — рисованный Барсик в центре, без зверушек и фото
-  drawClockInto($("clock"), h, m, state.level.numbers && state.training, !state.story, !!state.story);
+  drawClockInto($("clock"), h, m, state.level.numbers && state.training, !state.story, !!state.story,
+                state.story && CLOCK_THEMES[state.story.clock]); // в истории у каждой остановки свои часы
   if (state.story && state.story.animals) drawAnimals($("clock"));
 }
 
@@ -16,11 +18,17 @@ const RING = ["cat", "bunny", "dog", "butterfly", "rabbit", "cat", "dog", "butte
 const CORNERS = [["cat", 19, 19], ["bunny", 181, 21], ["dog", 19, 181], ["butterfly", 181, 181]];
 
 // animals — украшения классики (зверушки и фото кота); cartoon — рисованный Барсик как в макетах (история)
-export function drawClockInto(svg, h, m, minuteNumbers, animals = true, cartoon = false) {
+// theme — оформление часов остановки (clock-themes.js): цвет обода и фона, украшения вокруг
+export function drawClockInto(svg, h, m, minuteNumbers, animals = true, cartoon = false, theme = null) {
   svg.innerHTML = "";
+  // украшениям нужно место вокруг циферблата — раздвигаем рамку рисунка
+  if (svg.id === "clock") svg.setAttribute("viewBox", theme ? "-22 -22 244 244" : "0 0 200 200");
+  if (theme && theme.back) theme.back(svg);
+  const face = theme ? theme.face : "#fffdf5";
   if (animals) CORNERS.forEach(([a, x, y], i) =>
     drawAnimal(svg, a, x, y, .62, "animal corner c" + i));
-  el("circle", { cx: 100, cy: 100, r: 96, fill: "#fffdf5", stroke: "#2b2d42", "stroke-width": 5 }, svg);
+  if (theme) el("circle", { cx: 100, cy: 100, r: 96 + (theme.rimW || 6), fill: theme.rim, stroke: "#2b2d42", "stroke-width": 3 }, svg);
+  el("circle", { cx: 100, cy: 100, r: 96, fill: face, stroke: "#2b2d42", "stroke-width": theme ? 3 : 5 }, svg);
   if (animals) { // морда нашего кота в середине циферблата, высветленная, чтобы цифры читались
     const clip = el("clipPath", { id: "dialClip" }, el("defs", {}, svg));
     el("circle", { cx: 100, cy: 100, r: 93.5 }, clip);
@@ -34,7 +42,7 @@ export function drawClockInto(svg, h, m, minuteNumbers, animals = true, cartoon 
   }
   if (cartoon) { // мордочка Барсика (90×90) в центре: цифры часов на радиусе 68 остаются снаружи
     const g = el("g", { transform: "translate(55 52)", opacity: .85, class: "dial-cat", "aria-hidden": "true" }, svg);
-    g.innerHTML = cat(90);
+    g.innerHTML = ((state.story && state.story.hero) || cat)(90); // в главе Ню — Ню
   }
   if (animals) RING.forEach((a, i) => {
     const ang = (i * 30 + 15) * Math.PI / 180;
@@ -56,7 +64,7 @@ export function drawClockInto(svg, h, m, minuteNumbers, animals = true, cartoon 
     if (minuteNumbers) { // подпись минут снаружи не помещается — рисуем мелко внутри кольца
       const tm = el("text", { x: 100 + 52 * Math.sin(a), y: 100 - 52 * Math.cos(a) + 3.5,
                               "text-anchor": "middle", "font-size": 9, fill: "#1d6fd1",
-                              stroke: "#fffdf5", "stroke-width": 2.5, "paint-order": "stroke" }, svg); // белая обводка — читается поверх кота
+                              stroke: face, "stroke-width": 2.5, "paint-order": "stroke" }, svg); // обводка цветом фона — читается поверх кота
       tm.textContent = n * 5;
     }
   }

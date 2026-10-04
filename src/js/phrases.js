@@ -77,6 +77,29 @@ export const PHRASES = {
     { id: "rabbitGame",   from: "19:00", to: "20:00" },
     { id: "rabbitJam",    from: "19:00", to: "20:30" },
   ],
+  // «Ошибки Ню» — последняя остановка каждой главы: куда Ню нужно было успеть
+  nyuDay: [ // уровень «Половина»
+    { id: "nyuSchool",  from: "07:00", to: "08:00" },
+    { id: "nyuWalk",    from: "10:00", to: "13:00" },
+    { id: "nyuLunch",   from: "12:00", to: "15:00" },
+    { id: "nyuDraw",    from: "15:00", to: "17:00" },
+    { id: "nyuDinner",  from: "18:00", to: "20:00" },
+    { id: "nyuBed",     from: "20:30", to: "22:00" },
+  ],
+  nyuTea: [ // уровень «По 5 минут»
+    { id: "nyuFlowers", from: "10:00", to: "12:00" },
+    { id: "nyuDogLunch", from: "12:00", to: "14:00" },
+    { id: "nyuCake",    from: "14:00", to: "16:00" },
+    { id: "nyuBunnyTea", from: "16:00", to: "18:00" },
+    { id: "nyuRabbit",  from: "18:00", to: "19:30" },
+  ],
+  nyuShop: [ // уровень «Мастер»
+    { id: "nyuTrain",   from: "08:00", to: "11:00" },
+    { id: "nyuMilk",    from: "09:00", to: "12:00" },
+    { id: "nyuPost",    from: "10:00", to: "13:00" },
+    { id: "nyuRepair",  from: "13:00", to: "16:00" },
+    { id: "nyuConcert", from: "17:00", to: "19:00" },
+  ],
   // Глава 3 «Мастерская»: остановившиеся часы могут показывать что угодно — фразы без интервала (stops.*.ask)
 };
 
@@ -86,6 +109,7 @@ const toMin = s => { const [h, m] = s.split(":").map(Number); return h * 60 + m;
 export const PART_OF_DAY = {
   breakfast: ["06:00", "10:00"], walk: ["10:00", "17:00"], play: ["15:00", "20:00"], night: ["19:00", "22:00"],
   teaBunny: ["08:00", "21:00"], teaDog: ["08:00", "21:00"], teaButterfly: ["08:00", "21:00"], teaRabbit: ["08:00", "21:00"],
+  nyuDay: ["07:00", "22:00"], nyuTea: ["08:00", "21:00"], nyuShop: ["08:00", "21:00"],
 };
 
 // Вопрос для остановки: фраза, которой ещё не было в этой сессии (остановке), и время только из её интервала.

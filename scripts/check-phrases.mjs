@@ -8,7 +8,7 @@ import { LEVELS } from "../src/js/levels.js";
 import { STORY_TEXTS } from "../src/js/i18n/story-texts.js";
 
 const SESSION = 5; // вопросов на остановке истории (ROUNDS в story.js)
-const STOP_LEVEL = { breakfast: 1, walk: 1, play: 2, night: 2, teaBunny: 3, teaDog: 3, teaButterfly: 4, teaRabbit: 4 };
+const STOP_LEVEL = { breakfast: 1, walk: 1, play: 2, night: 2, teaBunny: 3, teaDog: 3, teaButterfly: 4, teaRabbit: 4, nyuDay: 2, nyuTea: 4, nyuShop: 5 };
 const toMin = s => { const [h, m] = s.split(":").map(Number); return h * 60 + m; };
 const errors = [], rows = [];
 const inInterval = (p, level, h, m) => { // есть ли 24-часовое время из интервала, которое на циферблате выглядит как h:m
