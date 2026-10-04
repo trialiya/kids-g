@@ -18,6 +18,11 @@ export const state = {
   revealed: false,
   step: null,             // обучение по шагам: "h" — сначала часы, "m" — потом минуты; null — сразу всё время
   helped: false,          // на шаге часов была подсказка или ошибка
+  ui: "story",            // story — «История с Муркой» (по умолчанию) | classic — классический режим
+  story: null,            // текущая остановка истории (реплики героя, итог) или null в классике
+  chapter: null,          // открытая глава истории
+  rounds: 10,             // вопросов в забеге
 };
 
 try { state.soundOn = localStorage.getItem("sound") !== "off"; } catch (e) { /* хранилище недоступно */ }
+try { if (localStorage.getItem("ui") === "classic") state.ui = "classic"; } catch (e) { /* хранилище недоступно */ }

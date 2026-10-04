@@ -1,6 +1,7 @@
 import "./styles/base.css";
 import "./styles/menu.css";
 import "./styles/game.css";
+import "./styles/story.css";
 import "./styles/animations.css";
 import "./styles/responsive.css";
 
@@ -9,6 +10,7 @@ import { initFullscreen } from "./js/fullscreen.js";
 import { initSpeech } from "./js/speech.js";
 import { initGame } from "./js/game.js";
 import { initMenu, applyLang } from "./js/menu.js";
+import { initStory } from "./js/story.js";
 import { state } from "./js/state.js";
 
 // Для отладки и автотестов: открой страницу с ?debug, и состояние игры будет в window.__state
@@ -20,6 +22,7 @@ initSpeech();
 initGame();
 initMenu();
 applyLang();
+initStory();
 
 // Офлайн-режим: service worker собирается вместе с приложением (см. vite.config.js)
 if (import.meta.env.PROD && "serviceWorker" in navigator) {

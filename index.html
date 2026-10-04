@@ -25,8 +25,23 @@
   <button class="fs hidden" id="fsMenu">⛶ На весь экран</button>
   <p class="ios-hint hidden" id="iosHint" data-i="ios">На iPhone: «Поделиться» → «На экран Домой», и игра откроется на весь экран.</p>
 
-  <!-- Выбор уровня -->
-  <section id="menu" class="card">
+  <!-- История с Муркой (по умолчанию) -->
+  <section id="story" class="card">
+    <div class="hero"><span id="storyCat"></span><p class="bubble" id="storyHello"></p></div>
+    <div class="chapters" id="chapters"></div>
+    <button class="classic-btn" id="toClassic" type="button"></button>
+  </section>
+
+  <!-- Глава истории: дорожка остановок -->
+  <section id="chapter" class="card hidden">
+    <div class="chtop"><button id="chBack" type="button"></button><h2 id="chTitle"></h2></div>
+    <div class="hero"><span id="chWho"></span><p class="bubble" id="chIntro"></p></div>
+    <div class="stops" id="stops"></div>
+  </section>
+
+  <!-- Классика: выбор уровня -->
+  <section id="menu" class="card hidden">
+    <button class="classic-btn to-story" id="toStory" type="button"></button>
     <div class="tip" data-ih="howto">
       <b>Как читать часы:</b><br>
       <span style="color:var(--hour)"><b>Короткая красная</b></span> стрелка — часы.
@@ -58,6 +73,7 @@
     </div>
     <div class="game-body">
     <div class="col-clock">
+    <div class="scene hidden" id="scene"><span id="sceneWho"></span><p class="bubble" id="sceneSay"></p></div>
     <div class="timecard hidden" id="timeCard"><div class="big" id="timeBig"></div><div class="words" id="timeWords"></div></div>
     <svg class="clock" id="clock" viewBox="0 0 200 200" role="img" aria-label="Часы" data-ia="clockAria"></svg>
     <div class="legend">
@@ -92,6 +108,7 @@
 
   <!-- Итог -->
   <section id="end" class="card result hidden">
+    <div class="end-art hidden" id="endArt"></div>
     <h2 id="endTitle"></h2>
     <div class="stars" id="endStars"></div>
     <p id="endText"></p>

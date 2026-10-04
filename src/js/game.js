@@ -9,13 +9,20 @@ import { canSpeak, speak, stopSpeak, toggleSpeak, isSpeakingFrom } from "./speec
 import { drawClock, drawClockInto } from "./clock.js";
 import { explainCorrect, explainMistake, explainClockMistake, timeText, timeWords } from "./explain.js";
 import { show, showMenu } from "./ui.js";
+import { cat } from "./art.js";
 
-export function start(l, k, type) {
+// story — остановка «Истории с Муркой» (см. story.js) или null для классики
+export function start(l, k, type, story = null) {
+  state.story = story; state.rounds = story ? story.rounds : ROUNDS;
+  document.body.dataset.ch = story ? story.chapter : "";
+  $("scene").classList.toggle("hidden", !story);
+  $("toMenu").textContent = story ? story.toMenuLabel : t("toMenu");
+  $("back").textContent = story ? story.backLabel : t("back");
   state.level = l; state.kind = k; state.answerType = type || "choice";
   state.training = state.kind === "learn";
   state.mode = state.kind === "clocks" ? "clocks" : state.answerType;
   state.qIndex = 0; state.score = 0; state.lastKey = null;
-  $("levelName").textContent = `${KINDS[state.kind].icon} ${t("lvShort", l.id)}`;
+  $("levelName").textContent = story ? story.title : `${KINDS[state.kind].icon} ${t("lvShort", l.id)}`;
   $("tipText").innerHTML = "💡 " + lv(l).tip;
   $("levelTip").classList.toggle("hidden", !state.training);
   const clocks = state.mode === "clocks";
@@ -47,7 +54,7 @@ function randomTime() {
 
 function nextQuestion() {
   stopSpeak();
-  if (state.qIndex >= ROUNDS) return finish();
+  if (state.qIndex >= state.rounds) return finish();
   state.current = randomTime();
   state.guessH = 12; state.guessM = 0; state.answered = false; state.attempts = 0; state.revealed = false;
   // в «Обучении» сначала спрашиваем только часы, потом минуты (и в выборе из 4, и при вводе стрелочками)
@@ -57,13 +64,14 @@ function nextQuestion() {
     $("timeBig").textContent = state.level.step === 0 ? state.current.h + ":00" : fmt(state.current.h, state.current.m);
     $("timeWords").textContent = timeWords(state.current.h, state.current.m);
   } else drawClock(state.current.h, state.current.m);
+  if (state.story) state.story.ask();
   updateAnswer();
   $("feedback").classList.add("hidden");
   $("next").classList.add("hidden");
   if (state.mode === "input") $("check").classList.remove("hidden");
   setSpinEnabled(true);
   makeChoices();
-  $("bar").style.width = (state.qIndex / ROUNDS * 100) + "%";
+  $("bar").style.width = (state.qIndex / state.rounds * 100) + "%";
   $("score").textContent = "⭐ " + state.score;
 }
 
@@ -178,6 +186,7 @@ function toMinutes() {
 function wrongStep(gh, gm) {
   state.attempts++;
   sfx.bad();
+  if (state.story) state.story.react(false);
   showRetryFeedback(gh, gm);
 }
 
@@ -224,6 +233,7 @@ function choose(o, btn) {
   }
   state.attempts++;
   sfx.bad();
+  if (state.story) state.story.react(false);
   btn.disabled = true;
   btn.classList.add("wrong");
   showRetryFeedback(o.h, o.m);
@@ -274,14 +284,15 @@ function submit(gh, gm, assisted) {
   if (ok && !assisted) state.score++;
   $("score").textContent = "⭐ " + state.score;
   if (ok) celebrate(!assisted); else sfx.bad();
+  if (state.story) state.story.react(ok);
   showFeedback(ok, gh, gm, assisted);
   setSpinEnabled(false);
   $("check").classList.add("hidden");
   $("next").classList.remove("hidden");
   $("next").scrollIntoView({ block: "nearest", behavior: "smooth" });
-  $("next").textContent = t(state.qIndex === ROUNDS - 1 ? "result" : "next");
+  $("next").textContent = t(state.qIndex === state.rounds - 1 ? "result" : "next");
   state.qIndex++;
-  $("bar").style.width = (state.qIndex / ROUNDS * 100) + "%";
+  $("bar").style.width = (state.qIndex / state.rounds * 100) + "%";
 }
 $("next").onclick = nextQuestion;
 
@@ -304,6 +315,7 @@ document.addEventListener("keydown", e => {
 
 // Большой смайлик: радостный за верный ответ, грустный — за ошибку
 function mood(ok) {
+  if (state.story) return `<span class="mood ${ok ? "happy" : "sad"}" aria-hidden="true">${cat(56, ok ? "happy" : "sad")}</span>`;
   const faces = ok ? ["😄", "😃", "🥳", "😊"] : ["😢", "😟", "🙁", "😿"];
   return `<span class="mood ${ok ? "happy" : "sad"}" aria-hidden="true">${faces[Math.floor(Math.random() * faces.length)]}</span>`;
 }
@@ -337,18 +349,27 @@ function showFeedback(ok, gh, gm, assisted) {
 
 
 function finish() {
-  const stars = state.score >= 9 ? 3 : state.score >= 7 ? 2 : state.score >= 4 ? 1 : 0;
+  let stars;
+  if (state.story) { // история: свои звёзды за короткий забег и награда главы (рыбки, чашки, шестерёнки)
+    const res = state.story.finish(state.score, state.rounds);
+    stars = res.stars;
+    $("endText").textContent = res.text;
+    $("endArt").innerHTML = res.art;
+  } else {
+    stars = state.score >= 9 ? 3 : state.score >= 7 ? 2 : state.score >= 4 ? 1 : 0;
+    const next = LEVELS[state.level.id];
+    $("endText").textContent = t("endScore", state.score, ROUNDS) +
+      (stars >= 2 && next ? t("endNext", lv(next).name) : stars < 2 ? t("endRetry", state.training) : "");
+  }
+  $("endArt").classList.toggle("hidden", !state.story);
   $("endTitle").textContent = t(stars === 3 ? "endGreat" : stars >= 1 ? "endGood" : "endMore");
   $("endStars").textContent = "★".repeat(stars) + "☆".repeat(3 - stars);
-  const next = LEVELS[state.level.id] ;
-  $("endText").textContent = t("endScore", state.score, ROUNDS) +
-    (stars >= 2 && next ? t("endNext", lv(next).name) : stars < 2 ? t("endRetry", state.training) : "");
   show("end");
   if (stars >= 2) { sfx.win(); confetti(stars === 3 ? 40 : 24); }
 }
 
 
 export function initGame() {
-  $("back").onclick = $("toMenu").onclick = showMenu;
-  $("again").onclick = () => start(state.level, state.kind, state.answerType);
+  $("back").onclick = $("toMenu").onclick = () => state.story ? state.story.back() : showMenu();
+  $("again").onclick = () => start(state.level, state.kind, state.answerType, state.story);
 }

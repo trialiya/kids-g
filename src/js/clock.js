@@ -5,7 +5,8 @@ import { drawAnimal } from "./animals.js";
 import catFace from "../assets/cat-face.jpg";
 
 export function drawClock(h, m) {
-  drawClockInto($("clock"), h, m, state.level.numbers && state.training); // в основном режиме цифры минут — это подсказка, их нет
+  // в основном режиме цифры минут — это подсказка, их нет; в истории часы простые — без зверушек и фото
+  drawClockInto($("clock"), h, m, state.level.numbers && state.training, !state.story);
 }
 
 // Зверушки: маленькие между цифрами и крупные по углам — чисто для красоты

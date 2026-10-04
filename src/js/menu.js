@@ -33,6 +33,7 @@ export function applyLang() {
   const st = $("speakTip");
   st.dataset.label = t("speakTipLbl"); st.setAttribute("aria-label", t("speakTipLbl")); st.title = t("speakTipTitle");
   syncSound(); syncFs(); renderLevels();
+  document.dispatchEvent(new Event("langchange"));
 }
 
 export function initMenu() {
@@ -41,6 +42,7 @@ export function initMenu() {
     setLang(b.dataset.l);
     applyLang();
   });
+  document.addEventListener("classic:show", renderLevels);
   document.querySelectorAll("#modes button").forEach(b => b.onclick = () => {
     state.kind = b.dataset.k;
     try { localStorage.setItem("kind", state.kind); } catch (e) {}

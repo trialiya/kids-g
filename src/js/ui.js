@@ -1,9 +1,11 @@
 // Переключение экранов
 import { $ } from "./dom.js";
 import { stopSpeak } from "./speech.js";
+import { state } from "./state.js";
 
 export function show(id) {
   document.body.classList.toggle("playing", id === "game");
-  ["menu", "game", "end"].forEach(s => $(s).classList.toggle("hidden", s !== id));
+  ["story", "chapter", "menu", "game", "end"].forEach(s => $(s).classList.toggle("hidden", s !== id));
 }
-export function showMenu() { stopSpeak(); show("menu"); }
+// Домашний экран: история с Муркой или классическое меню
+export function showMenu() { stopSpeak(); show(state.ui === "classic" ? "menu" : "story"); }
