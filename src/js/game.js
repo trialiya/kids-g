@@ -184,6 +184,7 @@ function toMinutes() {
   state.revealed = false;
   state.step = "m";
   sfx.ok();
+  if (state.story) state.story.ask(); // герой снова спокойно спрашивает — без грустной реплики после ошибки в часах
   $("feedback").classList.add("hidden");
   makeChoices();
 }
