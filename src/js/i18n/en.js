@@ -70,7 +70,7 @@ const en = {
   ecmWantExact: (x, m) => x === 12 ? `at the number <b>12</b> (on the hour, 0 minutes)` : `at the number <b>${x}</b> (${x} × 5 = ${m})`,
   ecmWantAfter: x => `a little past the number <b>${x}</b>`,
   ecmMin: (gm, m, want) => `😕 <b>Minutes:</b> on the clock you picked the long blue hand shows ${enMin(gm)}, but you need ${m}. It should point ${want}.`,
-  fbOk: "🎉 Correct!", fbOkHint: "👍 Correct, with a hint!", why: "Why?", fbBad: "Not quite 🙂", fbRetry: "Not quite 🙂 Try again!",
+  fbOk: "Correct!", fbOkHint: "Correct, with a hint!", why: "Why?", fbBad: "Not quite", fbRetry: "Not quite. Try again!",
   hintLabel: "💡 Hint", hintNote: "The correct option is highlighted.",
   fbAnswered: (a, right) => `You answered: <b>${a}</b>. Correct: <b>${right}</b>.`,
   fbHowRight: "How to get it right:",

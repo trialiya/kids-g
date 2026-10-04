@@ -121,7 +121,7 @@ function makeChoices() {
     if (state.mode === "clocks") {
       const svg = document.createElementNS(ns, "svg");
       svg.setAttribute("viewBox", "0 0 200 200");
-      drawClockInto(svg, o.h, o.m, false);
+      drawClockInto(svg, o.h, o.m, false, false); // на маленьких часах зверушки мешают
       b.appendChild(svg);
       b.setAttribute("aria-label", t("clockOptAria", i + 1));
     } else {
@@ -165,7 +165,7 @@ function showRetryFeedback(gh, gm) {
   const speakBtn = canSpeak
     ? `<button class="speak" id="speak" type="button" aria-label="${t("speakHint")}" title="${t("speakTitle")}">🔊</button>` : "";
   const bullets = explainMistake(state.current.h, state.current.m, gh, gm).map(s => `<li>${s}</li>`).join("");
-  f.innerHTML = `<h3>${t("fbRetry")}${speakBtn}</h3>
+  f.innerHTML = `<h3>${mood(false)}${t("fbRetry")}${speakBtn}</h3>
     <details id="hint"><summary>${t("hintLabel")}</summary><ul>${bullets}</ul>
     <div class="hintnote">${t("hintNote")}</div></details>`;
   f.classList.remove("hidden");
@@ -221,6 +221,12 @@ document.addEventListener("keydown", e => {
 });
 
 
+// Большой смайлик: радостный за верный ответ, грустный — за ошибку
+function mood(ok) {
+  const faces = ok ? ["😄", "😃", "🥳", "😊"] : ["😢", "😟", "🙁", "😿"];
+  return `<span class="mood ${ok ? "happy" : "sad"}" aria-hidden="true">${faces[Math.floor(Math.random() * faces.length)]}</span>`;
+}
+
 function showFeedback(ok, gh, gm, assisted) {
   const f = $("feedback");
   f.className = "feedback " + (ok ? "ok" : "bad");
@@ -230,15 +236,15 @@ function showFeedback(ok, gh, gm, assisted) {
   const shown = state.level.step === 0 ? gh + ":00" : fmt(gh, gm);
   let html;
   if (ok) {
-    html = `<h3>${t(assisted ? "fbOkHint" : "fbOk")}${speakBtn}</h3><div>${timeText(state.current.h, state.current.m)}</div>`;
+    html = `<h3>${mood(true)}${t(assisted ? "fbOkHint" : "fbOk")}${speakBtn}</h3><div>${timeText(state.current.h, state.current.m)}</div>`;
     html += `<details style="margin-top:6px"><summary>${t("why")}</summary><ul>${li(explainCorrect(state.current.h, state.current.m))}</ul></details>`;
   } else if (state.mode === "clocks") {
-    html = `<h3>${t("fbBad")}${speakBtn}</h3>`;
+    html = `<h3>${mood(false)}${t("fbBad")}${speakBtn}</h3>`;
     html += `<div>${t("fbClockLine", timeText(state.current.h, state.current.m), shown)}</div>`;
     html += `<ul>${li(explainClockMistake(state.current.h, state.current.m, gh, gm))}</ul>`;
     html += `<div style="margin-top:8px"><b>${t("fbHowFind")}</b></div><ul>${li(explainCorrect(state.current.h, state.current.m))}</ul>`;
   } else {
-    html = `<h3>${t("fbBad")}${speakBtn}</h3>`;
+    html = `<h3>${mood(false)}${t("fbBad")}${speakBtn}</h3>`;
     html += `<div>${t("fbAnswered", shown, timeText(state.current.h, state.current.m))}</div>`;
     html += `<ul>${li(explainMistake(state.current.h, state.current.m, gh, gm))}</ul>`;
     html += `<div style="margin-top:8px"><b>${t("fbHowRight")}</b></div><ul>${li(explainCorrect(state.current.h, state.current.m))}</ul>`;
