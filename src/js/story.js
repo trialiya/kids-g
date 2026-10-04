@@ -64,7 +64,12 @@ function resetProgress() {
   renderStory();
 }
 
-const isDone = st => st.id in progress;
+// Остановка пройдена, если хоть раз было 4 из 5 верных с первой попытки (2 звезды и больше) —
+// только тогда открывается следующая. Сыгранная, но не пройденная остановка показывает свои звёзды.
+const PASS_STARS = 2;
+const PASS_SCORE = rounds => rounds - 1; // 4 из 5 — то же, что PASS_STARS
+const isPlayed = st => st.id in progress;
+const isDone = st => (progress[st.id] || 0) >= PASS_STARS;
 const doneCount = ch => ch.stops.filter(isDone).length;
 const chapterOpen = i => i === 0 || doneCount(CHAPTERS[i - 1]) === CHAPTERS[i - 1].stops.length;
 const stopOpen = (ch, i) => i === 0 || isDone(ch.stops[i - 1]);
@@ -112,7 +117,7 @@ function renderChapter(i) {
     b.disabled = !open;
     b.innerHTML = `<span class="pic">${ART[st.art](44)}</span>
       <span class="txt"><b>${s().stops[st.id].title}</b><small>${lv(level).name}</small></span>
-      ${open ? (isDone(st) ? starsHtml(progress[st.id]) : "") : lock(22)}`;
+      ${open ? (isPlayed(st) ? starsHtml(progress[st.id]) : "") : lock(22)}`;
     if (!open) b.title = s().stopLocked;
     b.onclick = () => playStop(i, j);
     box.appendChild(b);
@@ -134,30 +139,45 @@ function playStop(i, j) {
     $("sceneWho").innerHTML = st.who === "cat" ? cat(72, mood) : ART[st.who](64);
     if (canSpeak && state.soundOn) speak($("sceneSay"), $("sceneSpeak"));
   };
-  let last = {}, phrase = null; // текущая фраза (своя для каждого вопроса) и прошлый вопрос — чтобы не повторяться
+  // Сессия — одно прохождение остановки: фразы, время и реплики в ней не повторяются («Ещё раз» — новая сессия)
+  let used, seen, phrase = null;
+  const newSession = () => { used = { phrases: new Set(), times: new Set() }; seen = new Set(); };
+  newSession();
+  // случайная реплика из списка, которой ещё не было в сессии; все уже были — список идёт по новому кругу
+  const fresh = arr => {
+    let pool = arr.filter((_, k) => !seen.has(arr[k]));
+    if (!pool.length) { arr.forEach(x => seen.delete(x)); pool = arr; }
+    const x = pick(pool); seen.add(x); return x;
+  };
   const texts = () => phrase ? s().phrases[phrase.id] : null;
   state.story = {
     chapter: ch.id, rounds: ROUNDS, title: txt.title,
     // время вопроса: из интервала случайной фразы остановки; в мастерской фраз нет — время любое (null → как в классике)
     next() {
       if (!PHRASES[st.id]) return null;
-      const q = pickQuestion(st.id, level, last);
+      const q = pickQuestion(st.id, level, used);
       phrase = q.phrase;
-      last = { phraseId: q.phrase.id, key: q.h + ":" + q.m };
       return { h: q.h, m: q.m };
     },
-    ask: () => say(texts() ? texts().ask : pick(s().stops[st.id].ask), ""),
-    askMinutes: h => say(s().minutesAsk(h), ""),
-    react: ok => say(ok ? (texts() ? texts().win : pick(s().stops[st.id].win)) : pick(s().oops), ok ? "happy" : "sad"),
+    onStart: newSession,
+    ask: () => say(texts() ? texts().ask : fresh(s().stops[st.id].ask), ""),
+    askMinutes: h => say(fresh(s().minutesAsk)(h), ""),
+    react: ok => say(ok ? (texts() ? texts().win : fresh(s().stops[st.id].win)) : fresh(s().oops), ok ? "happy" : "sad"),
     finish(score, rounds) {
       const stars = score >= rounds ? 3 : score >= rounds - 1 ? 2 : score >= 2 ? 1 : 0;
       progress[st.id] = Math.max(progress[st.id] || 0, stars);
       save();
       renderStory();
       const icons = Array.from({ length: rounds }, (_, k) => REWARD[ch.reward](34, k < score)).join("");
-      const nxt = ch.stops[j + 1]; // следующий раздел главы (он уже открыт: эта остановка только что пройдена)
+      // следующий раздел главы — только если эта остановка пройдена (сейчас или раньше), иначе подсказка, сколько нужно
+      const nxt = isDone(st) ? ch.stops[j + 1] : null;
+      const lockNote = !isDone(st) && (ch.stops[j + 1] || CHAPTERS[i + 1]) ? `<p class="end-lock">${lock(18)} ${s().needToPass(PASS_SCORE(rounds), rounds)}</p>` : "";
+      // итоговая реплика Барсика — по числу верных ответов с первой попытки
+      const band = score >= rounds ? "all" : score >= rounds - 1 ? "almost" : score >= Math.ceil(rounds / 2) ? "half" : score > 0 ? "some" : "none";
+      const mood = score >= Math.ceil(rounds / 2) ? "happy" : score > 0 ? "" : "sad";
       return { stars, text: s().chapters[ch.id].reward(score, rounds),
-               art: `${cat(96, stars >= 1 ? "happy" : "sad")}<div class="rewards">${icons}</div>`,
+               art: `<span class="end-pic">${cat(96, mood)}</span><p class="bubble end-say">${pick(s().finale[band])}</p>` +
+                    `<div class="rewards">${icons}</div>${lockNote}`,
                next: nxt ? { label: s().nextStop(s().stops[nxt.id].title), go: () => playStop(i, j + 1) } : null };
     },
     back: () => { stopSpeak(); renderChapter(i); show("chapter"); },
