@@ -27,5 +27,11 @@ svg.clock.cheer { animation: cheer .8s ease; }
 .feedback .mood.sad { animation: moodsad 1s ease; }
 @keyframes moodjump { 0% { transform: scale(.2); } 50% { transform: scale(1.3) rotate(-10deg); } 75% { transform: scale(.95) rotate(6deg); } 100% { transform: scale(1); } }
 @keyframes moodsad { 0% { transform: scale(.2); opacity: 0; } 40% { transform: scale(1.1); opacity: 1; } 60%, 80% { transform: rotate(-8deg); } 70%, 90% { transform: rotate(8deg); } 100% { transform: none; } }
-svg.clock .animal { pointer-events: none; user-select: none; }
-@media (prefers-reduced-motion: reduce) { .feedback .mood { animation: none !important; } }
+svg.clock .animal { pointer-events: none; }
+svg.clock .corner .animal-body { transform-box: fill-box; transform-origin: 50% 90%; animation: wiggle 3s ease-in-out infinite; }
+svg.clock .corner.c1 .animal-body { animation-delay: -.8s; }
+svg.clock .corner.c2 .animal-body { animation-delay: -1.6s; }
+svg.clock .corner.c3 .animal-body { animation: flutter 1.6s ease-in-out infinite; transform-origin: 50% 50%; }
+@keyframes wiggle { 0%, 100% { transform: rotate(-6deg); } 50% { transform: rotate(6deg); } }
+@keyframes flutter { 0%, 100% { transform: scaleX(1) translateY(0); } 50% { transform: scaleX(.75) translateY(-2px); } }
+@media (prefers-reduced-motion: reduce) { .feedback .mood, svg.clock .animal-body { animation: none !important; } }

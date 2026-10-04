@@ -1,23 +1,24 @@
 // Рисование стрелочных часов в SVG
 import { $, el } from "./dom.js";
 import { state } from "./state.js";
+import { drawAnimal } from "./animals.js";
 
 export function drawClock(h, m) {
   drawClockInto($("clock"), h, m, state.level.numbers && state.training); // в основном режиме цифры минут — это подсказка, их нет
 }
 
-// Зверушки между цифрами — чисто для красоты
-const ANIMALS = ["🐱", "🐰", "🐶", "🦋", "🐇", "🐱", "🐶", "🦋", "🐰", "🐇", "🐶", "🦋"];
+// Зверушки: маленькие между цифрами и крупные по углам — чисто для красоты
+const RING = ["cat", "bunny", "dog", "butterfly", "rabbit", "cat", "dog", "butterfly", "bunny", "rabbit", "dog", "butterfly"];
+const CORNERS = [["cat", 19, 19], ["bunny", 181, 21], ["dog", 19, 181], ["butterfly", 181, 181]];
 
 export function drawClockInto(svg, h, m, minuteNumbers, animals = true) {
   svg.innerHTML = "";
+  if (animals) CORNERS.forEach(([a, x, y], i) =>
+    drawAnimal(svg, a, x, y, .62, "animal corner c" + i));
   el("circle", { cx: 100, cy: 100, r: 96, fill: "#fffdf5", stroke: "#2b2d42", "stroke-width": 5 }, svg);
-  if (animals) ANIMALS.forEach((a, i) => {
+  if (animals) RING.forEach((a, i) => {
     const ang = (i * 30 + 15) * Math.PI / 180;
-    const t = el("text", { x: 100 + 75 * Math.sin(ang), y: 100 - 75 * Math.cos(ang) + 3.5,
-                           "text-anchor": "middle", "font-size": 10, class: "animal",
-                           "aria-hidden": "true" }, svg);
-    t.textContent = a;
+    drawAnimal(svg, a, 100 + 75 * Math.sin(ang), 100 - 75 * Math.cos(ang), .27);
   });
   for (let i = 0; i < 60; i++) {
     const a = i * 6 * Math.PI / 180, big = i % 5 === 0;
