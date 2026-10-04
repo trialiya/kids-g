@@ -154,8 +154,10 @@ function playStop(i, j) {
       save();
       renderStory();
       const icons = Array.from({ length: rounds }, (_, k) => REWARD[ch.reward](34, k < score)).join("");
+      const nxt = ch.stops[j + 1]; // следующий раздел главы (он уже открыт: эта остановка только что пройдена)
       return { stars, text: s().chapters[ch.id].reward(score, rounds),
-               art: `${cat(96, stars >= 1 ? "happy" : "sad")}<div class="rewards">${icons}</div>` };
+               art: `${cat(96, stars >= 1 ? "happy" : "sad")}<div class="rewards">${icons}</div>`,
+               next: nxt ? { label: s().nextStop(s().stops[nxt.id].title), go: () => playStop(i, j + 1) } : null };
     },
     back: () => { stopSpeak(); renderChapter(i); show("chapter"); },
     toMenuLabel: s().toChapter, backLabel: s().back,

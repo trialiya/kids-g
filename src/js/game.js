@@ -207,12 +207,13 @@ function pickOptions(right, cand, rnd) {
 function makeStepChoices(box) {
   const { h, m } = state.current;
   const hourStep = state.step === "h";
-  // на «Половине» всего два значения минут — неверные варианты тогда берём по 5 минут
-  const st = state.level.minutes && state.level.minutes.length < 4 ? 5 : stepM();
+  const st = stepM(), grid = state.level.minutes;
   const snap = x => Math.round(((x + 60) % 60) / st) * st % 60;
   const vals = hourStep
     ? pickOptions(h, [nextHour(h), prevHour(h), (m / 5 | 0) || 12, (h + 5) % 12 + 1], // ±1 час, перепутаны стрелки, напротив
                   () => 1 + Math.floor(Math.random() * 12))
+    // минут на уровне не больше 4 («Половина» — :00 и :30, «Четверти» — :00 :15 :30 :45) — показываем ровно их
+    : grid && grid.length <= 4 ? shuffle(grid)
     : pickOptions(m, [snap(m + 30), snap(m + st), snap(m - st), snap((h % 12) * 5), snap(Math.floor(m / 5))],
                   () => snap(Math.floor(Math.random() * 60)));
   vals.forEach((v, i) => {
@@ -361,6 +362,8 @@ function finish() {
     stars = res.stars;
     $("endText").textContent = res.text;
     $("endArt").innerHTML = res.art;
+    $("endNext").classList.toggle("hidden", !res.next);
+    if (res.next) { $("endNext").textContent = res.next.label; $("endNext").onclick = res.next.go; }
   } else {
     stars = state.score >= 9 ? 3 : state.score >= 7 ? 2 : state.score >= 4 ? 1 : 0;
     const next = LEVELS[state.level.id];
@@ -368,6 +371,7 @@ function finish() {
       (stars >= 2 && next ? t("endNext", lv(next).name) : stars < 2 ? t("endRetry", state.training) : "");
   }
   $("endArt").classList.toggle("hidden", !state.story);
+  if (!state.story) $("endNext").classList.add("hidden");
   $("endTitle").textContent = t(stars === 3 ? "endGreat" : stars >= 1 ? "endGood" : "endMore");
   $("endStars").textContent = "★".repeat(stars) + "☆".repeat(3 - stars);
   show("end");
