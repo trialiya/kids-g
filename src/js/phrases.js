@@ -23,6 +23,9 @@ export const PHRASES = {
     { id: "homework",  from: "15:00", to: "17:00" },
     { id: "flowers",   from: "10:00", to: "12:00" },
     { id: "drawing",   from: "15:00", to: "17:00" },
+    { id: "music",     from: "14:00", to: "16:00" },
+    { id: "book",      from: "15:00", to: "17:00" },
+    { id: "training",  from: "15:00", to: "17:00" },
   ],
   play: [ // «Вечер», уровень «Половина»
     { id: "snack",     from: "16:00", to: "17:00" },
@@ -31,6 +34,10 @@ export const PHRASES = {
     { id: "dinner",    from: "18:00", to: "20:00" },
     { id: "scooter",   from: "16:00", to: "18:00" },
     { id: "toys",      from: "18:30", to: "20:00" },
+    { id: "danceMusic", from: "17:00", to: "19:00" },
+    { id: "clay",      from: "16:00", to: "18:00" },
+    { id: "helpMom",   from: "18:00", to: "19:30" },
+    { id: "dance",     from: "15:00", to: "19:00" },
   ],
   night: [ // «Ночь», уровень «Половина»
     { id: "bath",      from: "19:00", to: "20:30" },
@@ -39,6 +46,7 @@ export const PHRASES = {
     { id: "sleep",     from: "20:30", to: "22:00" },
     { id: "pajamas",   from: "19:30", to: "21:00" },
     { id: "lullaby",   from: "20:30", to: "22:00" },
+    { id: "lightsOff", from: "21:00", to: "22:00" },
   ],
   // Глава 2 «Чай у Барсика»: гости приходят в своё время
   teaBunny: [ // уровень «Четверти»
@@ -76,7 +84,7 @@ const toMin = s => { const [h, m] = s.split(":").map(Number); return h * 60 + m;
 
 // Части дня для остановок — фраза остановки должна в них укладываться (проверяет scripts/check-phrases.mjs)
 export const PART_OF_DAY = {
-  breakfast: ["06:00", "10:00"], walk: ["10:00", "17:00"], play: ["16:00", "20:00"], night: ["19:00", "22:00"],
+  breakfast: ["06:00", "10:00"], walk: ["10:00", "17:00"], play: ["15:00", "20:00"], night: ["19:00", "22:00"],
   teaBunny: ["08:00", "21:00"], teaDog: ["08:00", "21:00"], teaButterfly: ["08:00", "21:00"], teaRabbit: ["08:00", "21:00"],
 };
 
