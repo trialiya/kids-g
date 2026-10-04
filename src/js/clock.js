@@ -3,17 +3,19 @@ import { $, el } from "./dom.js";
 import { state } from "./state.js";
 import { drawAnimal } from "./animals.js";
 import catFace from "../assets/cat-face.jpg";
+import { cat } from "./art.js";
 
 export function drawClock(h, m) {
-  // в основном режиме цифры минут — это подсказка, их нет; в истории часы простые — без зверушек и фото
-  drawClockInto($("clock"), h, m, state.level.numbers && state.training, !state.story);
+  // в основном режиме цифры минут — это подсказка, их нет; в истории — рисованная Мурка в центре, без зверушек и фото
+  drawClockInto($("clock"), h, m, state.level.numbers && state.training, !state.story, !!state.story);
 }
 
 // Зверушки: маленькие между цифрами и крупные по углам — чисто для красоты
 const RING = ["cat", "bunny", "dog", "butterfly", "rabbit", "cat", "dog", "butterfly", "bunny", "rabbit", "dog", "butterfly"];
 const CORNERS = [["cat", 19, 19], ["bunny", 181, 21], ["dog", 19, 181], ["butterfly", 181, 181]];
 
-export function drawClockInto(svg, h, m, minuteNumbers, animals = true) {
+// animals — украшения классики (зверушки и фото кота); cartoon — рисованная Мурка как в макетах (история)
+export function drawClockInto(svg, h, m, minuteNumbers, animals = true, cartoon = false) {
   svg.innerHTML = "";
   if (animals) CORNERS.forEach(([a, x, y], i) =>
     drawAnimal(svg, a, x, y, .62, "animal corner c" + i));
@@ -28,6 +30,10 @@ export function drawClockInto(svg, h, m, minuteNumbers, animals = true) {
     el("stop", { offset: "40%", "stop-color": "#fffdf5", "stop-opacity": .25 }, fade);
     el("stop", { offset: "60%", "stop-color": "#fffdf5", "stop-opacity": .7 }, fade);
     el("stop", { offset: "100%", "stop-color": "#fffdf5", "stop-opacity": .85 }, fade);
+  }
+  if (cartoon) { // мордочка Мурки (90×90) в центре: цифры часов на радиусе 68 остаются снаружи
+    const g = el("g", { transform: "translate(55 52)", opacity: .85, class: "dial-cat", "aria-hidden": "true" }, svg);
+    g.innerHTML = cat(90);
   }
   if (animals) RING.forEach((a, i) => {
     const ang = (i * 30 + 15) * Math.PI / 180;
@@ -48,7 +54,8 @@ export function drawClockInto(svg, h, m, minuteNumbers, animals = true) {
     t.textContent = n;
     if (minuteNumbers) { // подпись минут снаружи не помещается — рисуем мелко внутри кольца
       const tm = el("text", { x: 100 + 52 * Math.sin(a), y: 100 - 52 * Math.cos(a) + 3.5,
-                              "text-anchor": "middle", "font-size": 9, fill: "#1d6fd1" }, svg);
+                              "text-anchor": "middle", "font-size": 9, fill: "#1d6fd1",
+                              stroke: "#fffdf5", "stroke-width": 2.5, "paint-order": "stroke" }, svg); // белая обводка — читается поверх кота
       tm.textContent = n * 5;
     }
   }
