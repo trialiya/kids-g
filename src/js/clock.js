@@ -8,6 +8,7 @@ import { cat } from "./art.js";
 export function drawClock(h, m) {
   // в основном режиме цифры минут — это подсказка, их нет; в истории — рисованный Барсик в центре, без зверушек и фото
   drawClockInto($("clock"), h, m, state.level.numbers && state.training, !state.story, !!state.story);
+  if (state.story && state.story.animals) drawAnimals($("clock"));
 }
 
 // Зверушки: маленькие между цифрами и крупные по углам — чисто для красоты
@@ -66,13 +67,31 @@ export function drawClockInto(svg, h, m, minuteNumbers, animals = true, cartoon 
   el("circle", { cx: 100, cy: 100, r: 6, fill: "#2b2d42" }, svg);
 }
 
-// Награда в истории за ответ с первой попытки: в случайном углу выскакивает одна случайная зверушка
-export function showAnimals(svg) {
-  if (svg.querySelector(".pop")) return;
-  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
-  const [, x, y] = pick(CORNERS), g = el("g", { class: "pop" });
-  svg.insertBefore(g, svg.firstChild); // за циферблатом, как зверушки по углам в классике
-  drawAnimal(g, pick(Object.keys(ANIMALS)), x, y, .62, "animal corner");
+// Награда в истории: за каждый ответ с первой попытки у часов появляется ещё одна случайная зверушка
+// и остаётся до конца остановки — 3 верных сразу = 3 зверушки. Сначала крупные по углам, дальше маленькие между цифрами.
+const SLOTS = [...CORNERS.map(([, x, y]) => [x, y, .62, true]),
+  ...RING.map((_, i) => { const a = (i * 30 + 15) * Math.PI / 180; return [100 + 75 * Math.sin(a), 100 - 75 * Math.cos(a), .27, false]; })];
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+
+export function addAnimal() {
+  const list = state.story.animals, used = list.map(a => a.slot);
+  const free = [...SLOTS.keys()].filter(i => !used.includes(i));
+  const corners = free.filter(i => SLOTS[i][3]);
+  if (!free.length) return;
+  list.push({ name: pick(Object.keys(ANIMALS)), slot: pick(corners.length ? corners : free), fresh: true });
+  drawAnimals($("clock"));
+}
+
+function drawAnimals(svg) {
+  svg.querySelectorAll(".collected").forEach(g => g.remove());
+  const hands = svg.querySelector(".hand-h");
+  for (const a of state.story.animals) {
+    const [x, y, sc, corner] = SLOTS[a.slot];
+    const g = el("g", { class: "collected" + (a.fresh ? " pop" : "") }); // выскакивает только новая
+    a.fresh = false;
+    svg.insertBefore(g, corner ? svg.firstChild : hands); // крупные — за циферблатом, маленькие — под стрелками
+    drawAnimal(g, a.name, x, y, sc, corner ? "animal corner" : "animal");
+  }
 }
 
 function hand(svg, deg, len, width, color, cls) {
