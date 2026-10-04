@@ -92,9 +92,14 @@ $("mDn").onclick = () => { state.guessM = (state.guessM - stepM() + 60) % 60; up
 
 $("check").onclick = () => {
   if (state.answered) return;
-  if (!state.step) return submit(state.guessH, state.level.step === 0 ? 0 : state.guessM);
-  // обучение по шагам: сначала проверяем только часы, потом только минуты
   const { h, m } = state.current;
+  if (!state.step) {
+    const gh = state.guessH, gm = state.level.step === 0 ? 0 : state.guessM;
+    // в «Обучении» (уровень «Ровно час», без шагов) ошибку можно исправить, как и при выборе из 4
+    if (state.training && (gh !== h || gm !== m)) return wrongStep(gh, gm);
+    return submit(gh, gm, state.training && (state.attempts > 0 || state.revealed));
+  }
+  // обучение по шагам: сначала проверяем только часы, потом только минуты
   if (state.step === "h") state.guessH === h ? toMinutes() : wrongStep(state.guessH, m);
   else if (state.guessM === m) submit(h, m, state.attempts > 0 || state.revealed || state.helped);
   else wrongStep(h, state.guessM);
@@ -256,7 +261,7 @@ function showRetryFeedback(gh, gm) {
   const bullets = explainMistake(state.current.h, state.current.m, gh, gm).map(s => `<li>${s}</li>`).join("");
   f.innerHTML = `<h3>${mood(false)}${t("fbRetry")}${speakBtn}</h3>
     <details id="hint"><summary>${t("hintLabel")}</summary><ul>${bullets}</ul>
-    <div class="hintnote">${t("hintNote")}</div></details>`;
+    ${state.mode === "choice" ? `<div class="hintnote">${t("hintNote")}</div>` : ""}</details>`;
   f.classList.remove("hidden");
   const hintEl = $("hint");
   hintEl.addEventListener("toggle", () => { if (hintEl.open) revealAnswer(); }); // элемент может исчезнуть до события
@@ -335,12 +340,12 @@ function showFeedback(ok, gh, gm, assisted) {
     html = `<h3>${mood(false)}${t("fbBad")}${speakBtn}</h3>`;
     html += `<div>${t("fbClockLine", timeText(state.current.h, state.current.m), shown)}</div>`;
     html += `<ul>${li(explainClockMistake(state.current.h, state.current.m, gh, gm))}</ul>`;
-    html += `<div style="margin-top:8px"><b>${t("fbHowFind")}</b></div><ul>${li(explainCorrect(state.current.h, state.current.m))}</ul>`;
+    html += `<div class="nospeak"><div style="margin-top:8px"><b>${t("fbHowFind")}</b></div><ul>${li(explainCorrect(state.current.h, state.current.m))}</ul></div>`;
   } else {
     html = `<h3>${mood(false)}${t("fbBad")}${speakBtn}</h3>`;
     html += `<div>${t("fbAnswered", shown, timeText(state.current.h, state.current.m))}</div>`;
     html += `<ul>${li(explainMistake(state.current.h, state.current.m, gh, gm))}</ul>`;
-    html += `<div style="margin-top:8px"><b>${t("fbHowRight")}</b></div><ul>${li(explainCorrect(state.current.h, state.current.m))}</ul>`;
+    html += `<div class="nospeak"><div style="margin-top:8px"><b>${t("fbHowRight")}</b></div><ul>${li(explainCorrect(state.current.h, state.current.m))}</ul></div>`;
   }
   f.innerHTML = html;
   const sp = $("speak");
