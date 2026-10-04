@@ -50,6 +50,9 @@ function nextQuestion() {
   if (state.qIndex >= ROUNDS) return finish();
   state.current = randomTime();
   state.guessH = 12; state.guessM = 0; state.answered = false; state.attempts = 0; state.revealed = false;
+  // в «Обучении» с выбором из 4 сначала спрашиваем только часы, потом минуты
+  state.step = state.training && state.mode === "choice" && state.level.step > 0 ? "h" : null;
+  state.helped = false;
   if (state.mode === "clocks") {
     $("timeBig").textContent = state.level.step === 0 ? state.current.h + ":00" : fmt(state.current.h, state.current.m);
     $("timeWords").textContent = timeWords(state.current.h, state.current.m);
@@ -85,7 +88,9 @@ $("check").onclick = () => submit(state.guessH, state.level.step === 0 ? 0 : sta
 function makeChoices() {
   const box = $("choices");
   box.innerHTML = "";
+  showStep();
   if (state.mode === "input") return;
+  if (state.step) return makeStepChoices(box);
   const { h, m } = state.current, key = (a, b) => a + ":" + b;
   const grid = state.level.minutes || null;
   const okM = x => (x + 60) % 60;
@@ -133,6 +138,45 @@ function makeChoices() {
   });
 }
 
+/* Обучение по шагам: подсказка над вариантами и приглушённая «чужая» стрелка */
+function showStep() {
+  const ask = $("stepAsk");
+  ask.classList.toggle("hidden", !state.step);
+  if (state.step) ask.innerHTML = state.step === "h" ? t("stepHour") : t("stepMin", state.current.h);
+  $("clock").classList.toggle("focus-h", state.step === "h");
+  $("clock").classList.toggle("focus-m", state.step === "m");
+}
+
+// Четыре варианта: правильный + похожие ошибки (cand), при нехватке — случайные (rnd)
+function pickOptions(right, cand, rnd) {
+  const opts = [right];
+  shuffle(cand).forEach(c => { if (opts.length < 4 && !opts.includes(c)) opts.push(c); });
+  for (let tries = 0; opts.length < 4 && tries < 200; tries++) { const c = rnd(); if (!opts.includes(c)) opts.push(c); }
+  return shuffle(opts);
+}
+
+function makeStepChoices(box) {
+  const { h, m } = state.current;
+  const hourStep = state.step === "h";
+  // на «Половине» всего два значения минут — неверные варианты тогда берём по 5 минут
+  const st = state.level.minutes && state.level.minutes.length < 4 ? 5 : stepM();
+  const snap = x => Math.round(((x + 60) % 60) / st) * st % 60;
+  const vals = hourStep
+    ? pickOptions(h, [nextHour(h), prevHour(h), (m / 5 | 0) || 12, (h + 5) % 12 + 1], // ±1 час, перепутаны стрелки, напротив
+                  () => 1 + Math.floor(Math.random() * 12))
+    : pickOptions(m, [snap(m + 30), snap(m + st), snap(m - st), snap((h % 12) * 5), snap(Math.floor(m / 5))],
+                  () => snap(Math.floor(Math.random() * 60)));
+  vals.forEach((v, i) => {
+    const o = hourStep ? { h: v, m } : { h, m: v }; // вторая часть ответа уже верная
+    const b = document.createElement("button");
+    b.dataset.h = o.h; b.dataset.m = o.m;
+    b.textContent = hourStep ? v : fmt(h, v);
+    b.setAttribute("aria-label", hourStep ? t("hourOptAria", i + 1, v) : t("optAria", i + 1, h, v));
+    b.onclick = () => choose(o, b);
+    box.appendChild(b);
+  });
+}
+
 /* Режим «выбор из 4»: можно пробовать несколько раз.
    Правильный вариант подсвечивается только после просмотра подсказки или её прослушивания. */
 function choose(o, btn) {
@@ -140,7 +184,16 @@ function choose(o, btn) {
   if (!state.training) { submit(o.h, o.m, false); return; } // основной режим: одна попытка
   if (o.h === state.current.h && o.m === state.current.m) {
     stopSpeak();
-    submit(o.h, o.m, state.attempts > 0 || state.revealed);
+    if (state.step === "h") { // часы угаданы — переходим к минутам
+      state.helped = state.attempts > 0 || state.revealed;
+      state.revealed = false;
+      state.step = "m";
+      sfx.ok();
+      $("feedback").classList.add("hidden");
+      makeChoices();
+      return;
+    }
+    submit(o.h, o.m, state.attempts > 0 || state.revealed || state.helped);
     return;
   }
   state.attempts++;
@@ -184,6 +237,7 @@ function showRetryFeedback(gh, gm) {
 function submit(gh, gm, assisted) {
   if (state.answered) return;
   state.answered = true;
+  if (state.step) { state.step = null; showStep(); }
   const ok = gh === state.current.h && gm === state.current.m;
   document.querySelectorAll("#choices button").forEach(b => {
     b.disabled = true;

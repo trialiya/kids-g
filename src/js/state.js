@@ -16,6 +16,8 @@ export const state = {
   lastKey: null,
   attempts: 0,
   revealed: false,
+  step: null,             // обучение по шагам: "h" — сначала часы, "m" — потом минуты; null — сразу всё время
+  helped: false,          // на шаге часов была подсказка или ошибка
 };
 
 try { state.soundOn = localStorage.getItem("sound") !== "off"; } catch (e) { /* хранилище недоступно */ }

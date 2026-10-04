@@ -53,14 +53,14 @@ export function drawClockInto(svg, h, m, minuteNumbers, animals = true) {
   }
   const hourAngle = ((h % 12) + m / 60) * 30;
   const minAngle = m * 6;
-  hand(svg, hourAngle, 46, 8, "#e63946");
-  hand(svg, minAngle, 76, 5, "#1d6fd1");
+  hand(svg, hourAngle, 46, 8, "#e63946", "hand-h");
+  hand(svg, minAngle, 76, 5, "#1d6fd1", "hand-m");
   el("circle", { cx: 100, cy: 100, r: 6, fill: "#2b2d42" }, svg);
 }
 
-function hand(svg, deg, len, width, color) {
+function hand(svg, deg, len, width, color, cls) {
   const a = deg * Math.PI / 180;
   el("line", { x1: 100 - 10 * Math.sin(a), y1: 100 + 10 * Math.cos(a),
                x2: 100 + len * Math.sin(a), y2: 100 - len * Math.cos(a),
-               stroke: color, "stroke-width": width, "stroke-linecap": "round" }, svg);
+               stroke: color, "stroke-width": width, "stroke-linecap": "round", class: cls }, svg);
 }
