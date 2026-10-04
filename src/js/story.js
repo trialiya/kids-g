@@ -9,6 +9,7 @@ import { show } from "./ui.js";
 import { stopSpeak, speak, toggleSpeak, canSpeak } from "./speech.js";
 import { PHRASES, pickQuestion } from "./phrases.js";
 import { start } from "./game.js";
+import { showComic } from "./comic.js";
 import { ART, cat, lock, fish, cup, gear } from "./art.js";
 
 const ROUNDS = 5; // в истории раунды короче, чем в классике
@@ -118,10 +119,10 @@ function renderChapter(i) {
   });
 }
 
+// Глава всегда открывается вступлением-комиксом, после него (или «Пропустить») — дорожка остановок
 function openChapter(i) {
   state.chapter = i;
-  renderChapter(i);
-  show("chapter");
+  showComic(CHAPTERS[i].id, () => { renderChapter(i); show("chapter"); });
 }
 
 /* ---------- игра на остановке ---------- */

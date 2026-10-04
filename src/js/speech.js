@@ -42,7 +42,7 @@ export function toggleSpeak(box, btn) {
   speak(box, btn);
 }
 
-export function speak(box, btn) {
+export function speak(box, btn, pitch = 1) {
   if (speaking) setSpeakUi(false); // вернуть иконку у предыдущей кнопки
   speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(speechText(box));
@@ -51,6 +51,7 @@ export function speak(box, btn) {
   const v = speechSynthesis.getVoices().find(x => x.lang && x.lang.toLowerCase().startsWith(state.lang));
   if (v) u.voice = v;
   u.rate = 0.9;
+  u.pitch = pitch; // у героев вступления свой голос: Зайка выше, Бобик ниже
   u.onend = u.onerror = () => { if (currentU === u) setSpeakUi(false); }; // cancel() старой реплики не сбрасывает новую
   setSpeakUi(true, btn);
   speechSynthesis.speak(u);

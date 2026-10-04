@@ -12,6 +12,7 @@ import { initSpeech } from "./js/speech.js";
 import { initGame } from "./js/game.js";
 import { initMenu, applyLang } from "./js/menu.js";
 import { initStory } from "./js/story.js";
+import { initComic } from "./js/comic.js";
 import { state } from "./js/state.js";
 
 // Для отладки и автотестов: открой страницу с ?debug, и состояние игры будет в window.__state
@@ -23,6 +24,7 @@ initSpeech();
 initGame();
 initMenu();
 applyLang();
+initComic();
 initStory();
 
 // Офлайн-режим: service worker собирается вместе с приложением (см. vite.config.js)
