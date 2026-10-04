@@ -55,7 +55,7 @@ function randomTime() {
 function nextQuestion() {
   stopSpeak();
   if (state.qIndex >= state.rounds) return finish();
-  state.current = randomTime();
+  state.current = (state.story && state.story.next && state.story.next()) || randomTime(); // в истории — время из интервала фразы
   state.guessH = 12; state.guessM = 0; state.answered = false; state.attempts = 0; state.revealed = false;
   // в «Обучении» сначала спрашиваем только часы, потом минуты (и в выборе из 4, и при вводе стрелочками)
   state.step = state.training && state.mode !== "clocks" && state.level.step > 0 ? "h" : null;
@@ -184,7 +184,7 @@ function toMinutes() {
   state.revealed = false;
   state.step = "m";
   sfx.ok();
-  if (state.story) state.story.ask(); // герой снова спокойно спрашивает — без грустной реплики после ошибки в часах
+  if (state.story) state.story.askMinutes(state.current.h); // «Верно, 8 часов! А сколько минут?» — без грустной реплики после ошибки
   $("feedback").classList.add("hidden");
   makeChoices();
 }
@@ -192,8 +192,8 @@ function toMinutes() {
 function wrongStep(gh, gm) {
   state.attempts++;
   sfx.bad();
-  if (state.story) state.story.react(false);
   showRetryFeedback(gh, gm);
+  if (state.story) state.story.react(false); // после подсказки: она останавливает чтение, а реплику героя должно быть слышно
 }
 
 // Четыре варианта: правильный + похожие ошибки (cand), при нехватке — случайные (rnd)
@@ -239,10 +239,10 @@ function choose(o, btn) {
   }
   state.attempts++;
   sfx.bad();
-  if (state.story) state.story.react(false);
   btn.disabled = true;
   btn.classList.add("wrong");
   showRetryFeedback(o.h, o.m);
+  if (state.story) state.story.react(false);
 }
 
 function revealAnswer() {
