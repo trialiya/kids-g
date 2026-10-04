@@ -1,0 +1,52 @@
+/* Мультяшные кнопки как в макетах: толстая тёмная рамка, «твёрдая» тень снизу, большие скругления.
+   При нажатии кнопка «вдавливается» — опускается на высоту тени. */
+:root { --pop: 0 4px 0 var(--ink); --pop-sm: 0 3px 0 var(--ink); }
+
+.modes button, .level-row .mode, .classic-btn, .fs, .top button, #chBack,
+#endNext, #again, #toMenu, #next, #check, .langsw {
+  border: 3px solid var(--ink); box-shadow: var(--pop); border-radius: 18px;
+  transition: transform .08s ease, box-shadow .08s ease;
+}
+.modes button:active:not(:disabled), .level-row .mode:active, .classic-btn:active, .fs:active, .top button:active,
+#chBack:active, #endNext:active, #again:active, #toMenu:active, #next:active, #check:active,
+.chapter-card:active:not(:disabled), .stop:active:not(:disabled) {
+  transform: translateY(3px); box-shadow: 0 1px 0 var(--ink);
+}
+
+/* режимы классики: белые вкладки, выбранная — жёлтая */
+.modes { gap: 8px; margin-bottom: 10px; }
+.modes button { background: #fff; padding: 10px 4px; font-weight: bold; }
+.modes button.active { background: var(--accent); border-color: var(--ink); }
+
+/* уровни классики: карточка с цветной рамкой, номер в кружке с тёмной обводкой */
+.level-row { border: 3px solid #f2cf6b; border-radius: 22px; padding: 12px; }
+.level-row .n { border: 3px solid var(--ink); width: 42px; height: 42px; font-size: 1.15rem; }
+.level-row .mode { background: #fff; padding: 10px; font-size: 1rem; }
+.level-row .mode:hover { background: #fff3c4; }
+
+/* переходы: «История ⇄ Классика», звук, полный экран, язык */
+.classic-btn { background: #fff; color: var(--ink); padding: 10px 18px; }
+.classic-btn.to-story { background: #fff3c4; border-color: var(--ink); }
+.fs { padding: 8px 16px; }
+.langsw { display: inline-flex; padding: 0; overflow: hidden; border-radius: 16px; box-shadow: var(--pop-sm); }
+.langsw button, .langsw button:last-child { border: 0; border-radius: 0; min-height: 34px; }
+.langsw button + button { border-left: 3px solid var(--ink); }
+body > main > .langsw { display: flex; width: max-content; margin: 2px auto 0; }
+
+/* в игре: «назад», звук, полный экран — поменьше тень */
+.top button { box-shadow: var(--pop-sm); border-radius: 14px; background: #fff; }
+#chBack { box-shadow: var(--pop-sm); border-radius: 14px; }
+
+/* главные действия */
+#next, #check, #endNext { border-radius: 20px; }
+#again { background: var(--accent); }
+#toMenu { background: #fff !important; }
+.row { gap: 12px; }
+
+/* карточки глав и остановок — те же скругления */
+.chapter-card { border-radius: 24px; }
+.stop { border-radius: 22px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .modes button, .level-row .mode, .classic-btn, .fs, .top button, #chBack, #endNext, #again, #toMenu, #next, #check { transition: none; }
+}

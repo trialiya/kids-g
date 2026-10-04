@@ -80,6 +80,7 @@ const ru = {
   fbClockLine: (right, picked) => `Нужно <b>${right}</b>, а на выбранных часах — <b>${picked}</b>.`,
   fbHowFind: "Как найти нужные часы:",
   // итог
+  wellDone: "Молодец!", catPhotoAlt: "Наш кот Барсик",
   endGreat: "Отлично! 🏆", endGood: "Хорошо! 👍", endMore: "Давай потренируемся ещё 💪",
   endScore: (sc, n) => `Верно: ${sc} из ${n}.`, endNext: name => ` Попробуй следующий уровень: «${name}»!`, endRetry: training => training ? " Прочитай подсказку и попробуй ещё раз." : " Потренируйся в режиме «Обучение» и попробуй ещё раз.",
 };

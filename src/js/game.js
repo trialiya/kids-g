@@ -10,8 +10,9 @@ import { drawClock, drawClockInto } from "./clock.js";
 import { explainCorrect, explainMistake, explainClockMistake, timeText, timeWords } from "./explain.js";
 import { show, showMenu } from "./ui.js";
 import { cat } from "./art.js";
+import { randomCatPhoto } from "./photos.js";
 
-// story — остановка «Истории с Муркой» (см. story.js) или null для классики
+// story — остановка «Истории с Барсиком» (см. story.js) или null для классики
 export function start(l, k, type, story = null) {
   state.story = story; state.rounds = story ? story.rounds : ROUNDS;
   document.body.dataset.ch = story ? story.chapter : "";
@@ -370,12 +371,20 @@ function finish() {
     $("endText").textContent = t("endScore", state.score, ROUNDS) +
       (stars >= 2 && next ? t("endNext", lv(next).name) : stars < 2 ? t("endRetry", state.training) : "");
   }
-  $("endArt").classList.toggle("hidden", !state.story);
-  if (!state.story) $("endNext").classList.add("hidden");
+  if (!state.story) { $("endArt").innerHTML = ""; $("endNext").classList.add("hidden"); }
+  // 90% и больше верных без подсказки (история: 5 из 5, классика: 9 из 10) — фото Барсика и «Молодец!»
+  const great = state.score >= Math.ceil(state.rounds * 0.9);
+  if (great) {
+    const rewards = $("endArt").querySelector(".rewards"); // в истории награды остаются под фото
+    $("endArt").innerHTML = `<figure class="cat-photo"><img src="${randomCatPhoto()}" alt="${t("catPhotoAlt")}">` +
+      `<figcaption>${t("wellDone")}</figcaption></figure>` + (rewards ? rewards.outerHTML : "");
+  }
+  $("endArt").classList.toggle("hidden", !state.story && !great);
   $("endTitle").textContent = t(stars === 3 ? "endGreat" : stars >= 1 ? "endGood" : "endMore");
   $("endStars").textContent = "★".repeat(stars) + "☆".repeat(3 - stars);
   show("end");
   if (stars >= 2) { sfx.win(); confetti(stars === 3 ? 40 : 24); }
+  if (great && canSpeak && state.soundOn) speak($("endArt").querySelector("figcaption"));
 }
 
 

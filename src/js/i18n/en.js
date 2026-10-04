@@ -79,6 +79,7 @@ const en = {
   fbHowRight: "How to get it right:",
   fbClockLine: (right, picked) => `You need <b>${right}</b>, but this clock shows <b>${picked}</b>.`,
   fbHowFind: "How to find the right clock:",
+  wellDone: "Well done!", catPhotoAlt: "Our cat Barsik",
   endGreat: "Excellent! 🏆", endGood: "Good job! 👍", endMore: "Let’s practice some more 💪",
   endScore: (sc, n) => `Correct: ${sc} of ${n}.`, endNext: name => ` Try the next level: “${name}”!`, endRetry: training => training ? " Read the tip and try again." : " Practice in “Learn” mode and try again.",
 };

@@ -2,6 +2,7 @@ import "./styles/base.css";
 import "./styles/menu.css";
 import "./styles/game.css";
 import "./styles/story.css";
+import "./styles/cartoon.css";
 import "./styles/animations.css";
 import "./styles/responsive.css";
 

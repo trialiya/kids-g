@@ -1,4 +1,4 @@
-/* «История с Муркой»: главы, дорожка остановок, сцена с героем. Цвет главы — переменные --ch / --chbg */
+/* «История с Барсиком»: главы, дорожка остановок, сцена с героем. Цвет главы — переменные --ch / --chbg */
 .ch-day, body[data-ch="day"] { --ch: #F27D52; --chbg: #FFF1DE; }
 .ch-tea, body[data-ch="tea"] { --ch: #E8628D; --chbg: #E6F5EA; }
 .ch-shop, body[data-ch="shop"] { --ch: #D9951F; --chbg: #F6E7C8; }
@@ -59,3 +59,9 @@ body[data-ch]:not([data-ch=""]) .stepask { background: var(--chbg); }
 .scene .bubble { flex: 1; }
 .scene .speak { margin-left: 0; width: 40px; height: 40px; }
 .end-next { display: block; width: 100%; margin: 12px 0 0; font-size: 1.2rem; background: var(--ok); color: #fff; }
+/* экран «Молодец!»: фото Барсика при результате 90%+ */
+.cat-photo { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.cat-photo img { width: min(220px, 60vw); aspect-ratio: 1; object-fit: cover; object-position: 50% 30%; border-radius: 50%;
+  border: 6px solid #fff; box-shadow: 0 0 0 4px var(--accent), 0 6px 16px rgba(0,0,0,.18); animation: pop .6s ease; }
+.cat-photo figcaption { font-size: 2rem; font-weight: bold; color: var(--ok); }
+@media (prefers-reduced-motion: reduce) { .cat-photo img { animation: none; } }

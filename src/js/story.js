@@ -1,4 +1,4 @@
-// Сюжетный режим «История с Муркой»: три главы по возрастанию сложности.
+// Сюжетный режим «История с Барсиком»: три главы по возрастанию сложности.
 // Игровая логика общая с классикой (game.js), здесь — главы, остановки, прогресс и реплики героев.
 import { $ } from "./dom.js";
 import { state } from "./state.js";
@@ -71,7 +71,7 @@ const starsHtml = n => `<span class="stars-sm" aria-label="★ ${n}/3">${"★".r
 
 /* ---------- экран «Главы» ---------- */
 export function renderStory() {
-  $("storyCat").innerHTML = cat(104, "", "Мурка");
+  $("storyCat").innerHTML = cat(104, "", "Барсик");
   $("storyHello").textContent = s().hello;
   $("toClassic").textContent = s().classic;
   $("resetStory").textContent = s().reset;
