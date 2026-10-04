@@ -10,6 +10,8 @@ import { stopSpeak, speak, toggleSpeak, canSpeak } from "./speech.js";
 import { PHRASES, pickQuestion } from "./phrases.js";
 import { start } from "./game.js";
 import { showComic } from "./comic.js";
+import { initAlbum, openAlbum, stickerHtml } from "./album.js";
+import { OUTFITS, setOutfit } from "./outfits.js";
 import { ART, cat, lock, fish, cup, gear } from "./art.js";
 
 const ROUNDS = 5; // в истории раунды короче, чем в классике
@@ -73,6 +75,7 @@ const isDone = st => (progress[st.id] || 0) >= PASS_STARS;
 const doneCount = ch => ch.stops.filter(isDone).length;
 const chapterOpen = i => i === 0 || doneCount(CHAPTERS[i - 1]) === CHAPTERS[i - 1].stops.length;
 const stopOpen = (ch, i) => i === 0 || isDone(ch.stops[i - 1]);
+const totalStars = () => Object.values(progress).reduce((a, n) => a + n, 0);
 const starsHtml = n => `<span class="stars-sm" aria-label="★ ${n}/3">${"★".repeat(n)}<i>${"★".repeat(3 - n)}</i></span>`;
 
 /* ---------- экран «Главы» ---------- */
@@ -80,6 +83,7 @@ export function renderStory() {
   $("storyCat").innerHTML = cat(104, "", "Барсик");
   $("storyHello").textContent = s().hello;
   $("toClassic").textContent = s().classic;
+  $("toAlbum").innerHTML = `📒 ${s().album}`;
   $("resetStory").textContent = s().reset;
   $("resetStory").classList.toggle("hidden", !Object.keys(progress).length); // сбрасывать нечего — кнопку не показываем
   $("toStory").textContent = s().toStory;
@@ -151,7 +155,7 @@ function playStop(i, j) {
   };
   const texts = () => phrase ? s().phrases[phrase.id] : null;
   state.story = {
-    chapter: ch.id, rounds: ROUNDS, title: txt.title,
+    chapter: ch.id, rounds: ROUNDS, title: txt.title, clock: st.id, // clock — оформление часов (clock-themes.js)
     // время вопроса: из интервала случайной фразы остановки; в мастерской фраз нет — время любое (null → как в классике)
     next() {
       if (!PHRASES[st.id]) return null;
@@ -165,7 +169,8 @@ function playStop(i, j) {
     react: ok => say(ok ? (texts() ? texts().win : fresh(s().stops[st.id].win)) : fresh(s().oops), ok ? "happy" : "sad"),
     finish(score, rounds) {
       const stars = score >= rounds ? 3 : score >= rounds - 1 ? 2 : score >= 2 ? 1 : 0;
-      progress[st.id] = Math.max(progress[st.id] || 0, stars);
+      const before = progress[st.id] || 0, starsBefore = totalStars(), chapterBefore = ch.stops.every(isDone);
+      progress[st.id] = Math.max(before, stars);
       save();
       renderStory();
       const icons = Array.from({ length: rounds }, (_, k) => REWARD[ch.reward](34, k < score)).join("");
@@ -175,9 +180,18 @@ function playStop(i, j) {
       // итоговая реплика Барсика — по числу верных ответов с первой попытки
       const band = score >= rounds ? "all" : score >= rounds - 1 ? "almost" : score >= Math.ceil(rounds / 2) ? "half" : score > 0 ? "some" : "none";
       const mood = score >= Math.ceil(rounds / 2) ? "happy" : score > 0 ? "" : "sad";
+      // награды за эту попытку: новая наклейка (золотая за 5 из 5), наклейка главы, новые наряды Барсика
+      const unlocks = [];
+      if (before < 2 && stars >= 2 || before < 3 && stars === 3)
+        unlocks.push(`<div class="unlock">${stickerHtml(st.art, { gold: stars === 3 })}<b>${s()[stars === 3 ? "newGold" : "newSticker"]}</b></div>`);
+      if (!chapterBefore && ch.stops.every(isDone))
+        unlocks.push(`<div class="unlock">${stickerHtml(ch.art, { big: true, gold: true, size: 64 })}<b>${s().newChapterSticker}</b></div>`);
+      OUTFITS.filter(o => starsBefore < o.stars && totalStars() >= o.stars).forEach(o =>
+        unlocks.push(`<div class="unlock">${cat(64, "happy", "", o.id)}<b>${s().newOutfit(s().outfits[o.id])}</b>
+          <button class="wear-btn" data-wear="${o.id}" type="button">${s().wear}</button></div>`));
       return { stars, text: s().chapters[ch.id].reward(score, rounds),
                art: `<span class="end-pic">${cat(96, mood)}</span><p class="bubble end-say">${pick(s().finale[band])}</p>` +
-                    `<div class="rewards">${icons}</div>${lockNote}`,
+                    `<div class="rewards">${icons}</div>${lockNote}` + (unlocks.length ? `<div class="unlocks">${unlocks.join("")}</div>` : ""),
                next: nxt ? { label: s().nextStop(s().stops[nxt.id].title), go: () => playStop(i, j + 1) } : null };
     },
     back: () => { stopSpeak(); renderChapter(i); show("chapter"); },
@@ -202,6 +216,17 @@ export function initStory() {
   $("resetStory").onclick = resetProgress;
   $("toStory").onclick = () => setUi("story");
   $("chBack").onclick = () => { state.chapter = null; show("story"); };
+  initAlbum({ chapters: CHAPTERS, stars: id => progress[id] || 0, total: totalStars });
+  $("toAlbum").onclick = () => openAlbum();
+  // «Надеть» новый наряд прямо с экрана итога
+  $("endArt").addEventListener("click", e => {
+    const b = e.target.closest("[data-wear]");
+    if (!b) return;
+    setOutfit(b.dataset.wear);
+    b.textContent = s().wearing; b.disabled = true;
+    const pic = $("endArt").querySelector(".end-pic"); if (pic) pic.innerHTML = cat(96, "happy");
+  });
+  document.addEventListener("outfitchange", renderStory); // Барсик на главной и в главе — в новом наряде
   if (canSpeak) {
     $("sceneSpeak").classList.remove("hidden");
     $("sceneSpeak").onclick = () => toggleSpeak($("sceneSay"), $("sceneSpeak"));

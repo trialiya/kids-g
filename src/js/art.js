@@ -1,11 +1,13 @@
 // Рисунки для сюжетного режима: Барсик (по фото нашего кота), его друзья и мелкие иконки.
 // Все функции возвращают строку <svg>…</svg>, размер задаётся первым аргументом.
+import { getOutfit, outfitSvg } from "./outfits.js";
 const INK = "#3A2E39";
 const svg = (size, vb, body, label) =>
   `<svg width="${size}" height="${size}" viewBox="${vb}" ${label ? `role="img" aria-label="${label}"` : 'aria-hidden="true"'}>${body}</svg>`;
 
 // Барсик: серый полосатый, белая мордочка, янтарные глаза. mood: "" | "happy" | "sad"
-export function cat(size = 96, mood = "", label = "") {
+// outfit — наряд (outfits.js); по умолчанию тот, что выбран в гардеробе
+export function cat(size = 96, mood = "", label = "", outfit = getOutfit()) {
   const eyes = mood === "happy"
     ? `<path d="M32 64 q9 -11 18 0 M70 64 q9 -11 18 0" fill="none" stroke="${INK}" stroke-width="4" stroke-linecap="round"/>`
     : `<circle cx="41" cy="62" r="9.5" fill="#E8A93A" stroke="${INK}" stroke-width="2.5"/>
@@ -37,7 +39,8 @@ export function cat(size = 96, mood = "", label = "") {
     ${mouth}
     <ellipse cx="31" cy="79" rx="6" ry="4" fill="#F49AAB" opacity=".75"/>
     <ellipse cx="89" cy="79" rx="6" ry="4" fill="#F49AAB" opacity=".75"/>
-    <path d="M30 82 l-22 -5 M30 88 l-22 2 M90 82 l22 -5 M90 88 l22 2" stroke="${INK}" stroke-width="2" stroke-linecap="round"/>`, label);
+    <path d="M30 82 l-22 -5 M30 88 l-22 2 M90 82 l22 -5 M90 88 l22 2" stroke="${INK}" stroke-width="2" stroke-linecap="round"/>
+    ${outfitSvg(outfit)}`, label);
 }
 
 export const bunny = (size = 56, label = "") => svg(size, "0 0 60 60", `

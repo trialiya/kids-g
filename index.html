@@ -29,8 +29,17 @@
   <section id="story" class="card">
     <div class="hero"><span id="storyCat"></span><p class="bubble" id="storyHello"></p></div>
     <div class="chapters" id="chapters"></div>
+    <button class="album-btn" id="toAlbum" type="button"></button>
     <button class="classic-btn" id="toClassic" type="button"></button>
     <button class="reset-btn hidden" id="resetStory" type="button"></button>
+  </section>
+
+  <!-- Альбом: наклейки за остановки и гардероб Барсика -->
+  <section id="album" class="card hidden">
+    <div class="chtop"><button id="albumBack" type="button"></button><h2 id="albumTitle"></h2></div>
+    <div class="album-tabs" role="tablist"><button id="tabStickers" role="tab" type="button"></button><button id="tabWardrobe" role="tab" type="button"></button></div>
+    <p class="album-sub" id="albumSub"></p>
+    <div id="albumBody"></div>
   </section>
 
   <!-- Вступление к главе: комикс-переписка, нажатие на диалог — следующая реплика -->

@@ -99,3 +99,45 @@ body[data-ch]:not([data-ch=""]) .stepask { background: var(--chbg); }
 .end-lock { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 2px 0 0; max-width: 320px;
   text-align: center; color: var(--muted); font-weight: bold; font-size: .95rem; }
 .end-lock svg { flex: none; }
+
+/* альбом: наклейки и гардероб */
+.album-btn { display: block; width: 100%; margin: 14px 0 0; padding: 12px; font-size: 1.15rem; background: #FFE8A3; color: var(--ink);
+  border: 3px solid var(--ink); border-radius: 20px; box-shadow: 0 4px 0 var(--ink); }
+.album-btn:active, #albumBack:active, .album-tabs button:active, .outfit:active:not(:disabled), .wear-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
+#album { background: #FFF6DA; }
+#albumBack { background: #fff; border: 3px solid var(--ink); border-radius: 18px; box-shadow: 0 4px 0 var(--ink); padding: 6px 12px; }
+.album-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.album-tabs button { background: #fff; color: var(--ink); border: 3px solid var(--ink); border-radius: 18px; box-shadow: 0 4px 0 var(--ink); font-size: 1.05rem; }
+.album-tabs button.active { background: var(--accent); }
+.album-sub { margin: 10px 0; text-align: center; color: var(--muted); font-weight: bold; }
+.album-page { background: #fff; border: 3px solid var(--ink); border-radius: 20px; padding: 10px; margin-bottom: 12px; }
+.album-page h3 { margin: 0 0 8px; color: var(--ch); }
+.slots { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.slot { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; }
+.slot.wide { grid-column: 1 / -1; }
+.slot figcaption { font-size: .78rem; font-weight: bold; line-height: 1.15; }
+.sticker { position: relative; display: grid; place-items: center; width: 66px; height: 66px; border-radius: 50%;
+  background: var(--chbg, #FFF1DE); border: 4px solid #fff; box-shadow: 0 0 0 3px var(--ink), 0 4px 0 3px var(--ink); }
+.sticker.big { width: 84px; height: 84px; }
+.sticker.gold { background: radial-gradient(circle at 30% 25%, #FFF6C8, #F7C948 70%); border-color: #FFE48A; }
+.sticker.gold::after { content: "✦"; position: absolute; top: -6px; right: -4px; color: #F2B33D; font-size: 1.2rem; text-shadow: 0 0 2px #fff; }
+.sticker.empty { background: #eee6d8; box-shadow: 0 0 0 3px #c9bca8; border-style: dashed; border-color: #c9bca8; }
+.sticker.empty svg { filter: brightness(0); opacity: .12; }
+.sticker.empty i { position: absolute; font-style: normal; font-weight: bold; font-size: 1.6rem; color: #b5a892; }
+.wardrobe { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+.outfit { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px; background: #fff; color: var(--ink);
+  border: 3px solid var(--ink); border-radius: 20px; box-shadow: 0 4px 0 var(--ink); font-weight: normal; }
+.outfit b { font-size: 1rem; }
+.outfit small { color: var(--muted); font-weight: bold; }
+.outfit.on { background: #DDF3D8; }
+.outfit.on small { color: var(--ok); }
+.outfit.locked { box-shadow: none; border-style: dashed; border-color: #c9bca8; }
+.outfit.locked svg { filter: grayscale(1); opacity: .35; }
+button.outfit:disabled { opacity: 1; }
+/* экран итога: новые награды */
+.unlocks { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 6px; }
+.unlock { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 12px; background: #FFF6DA;
+  border: 3px solid var(--ink); border-radius: 20px; animation: pop .6s ease; max-width: 220px; text-align: center; }
+.unlock b { font-size: 1rem; }
+.wear-btn { min-height: 40px; padding: 4px 16px; background: var(--ok); color: #fff; border: 3px solid var(--ink); border-radius: 16px; box-shadow: 0 3px 0 var(--ink); }
+@media (prefers-reduced-motion: reduce) { .unlock { animation: none; } }
